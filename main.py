@@ -1,10 +1,6 @@
 import glob
-import numpy as np
 import pandas as pd
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.linear_model import LogisticRegression
 from LLM import FreeLLMPreferenceClient
-from AcqStrategy import AcquisitionStrategy
 from batchPref import BatchPrefLearning
 import os
 from dotenv import load_dotenv

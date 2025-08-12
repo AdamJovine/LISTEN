@@ -3,15 +3,9 @@ import numpy as np
 import concurrent.futures
 import time
 import random
-from collections import defaultdict, Counter
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern
+from collections import defaultdict
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
 from typing import Dict, List, Optional, Tuple, Set
-from LLM import FreeLLMPreferenceClient
-from AcqStrategy import AcquisitionStrategy
-from prefAcq import PrefAcquisitionConfig, PreferenceAcquisition
 from Logistic import LinearLogisticModel
 from GP import GPUtilityModel
 
@@ -25,7 +19,6 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 from sklearn.impute import SimpleImputer
 
-from prefAcq import PrefAcquisitionConfig, PreferenceAcquisition
 from Utilitymodel import UtilityModel
 
 

@@ -4,15 +4,11 @@ from scipy.special import expit
 from Utilitymodel import UtilityModel
 
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Optional, List, Tuple, Dict
+from typing import Optional
 import numpy as np
 from numpy.linalg import inv
 from scipy.special import expit
 from sklearn.linear_model import LogisticRegression
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern
 
 
 class LinearLogisticModel(UtilityModel):

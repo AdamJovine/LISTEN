@@ -1,0 +1,13 @@
+name: LISTEN
+channels:
+  - conda-forge
+dependencies:
+  - pandas 
+  - numpy
+  - scikit-learn
+  - scipy
+  - matplotlib
+  - python-dotenv
+  - pip
+  - pip:
+      - groq
