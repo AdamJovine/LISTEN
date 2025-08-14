@@ -263,70 +263,7 @@ class BatchPrefLearning:
         batch_winners: List[int] = []
 
         # --- PERFECT mode: no LLM, hard-code stats ---
-        if getattr(self, "model_type", None) == "perfect":
-            X_all = getattr(self, "feat", getattr(self, "features", None))
-            if X_all is None:
-                raise ValueError("perfect mode requires a feature matrix on self.feat or self.features")
-
-            u = self.utility_model.posterior_mean_util(X_all)
-            # Base offset if you track a running total externally
-            cmp_offset = int(getattr(self, "total_comparison_num", 0))
-            batch_num = getattr(self, "batch_num", None)
-
-            for k, (idx_a, idx_b) in enumerate(pairs):
-                print(f"\n  Pair {k+1}/{len(pairs)}: {idx_a} vs {idx_b}")
-                ua, ub = float(u[idx_a]), float(u[idx_b])
-                winner_side = "A" if ua >= ub else "B"
-                champion = idx_a if winner_side == "A" else idx_b
-                batch_winners.append(champion)
-
-                # Fabricate votes to keep interface consistent (not used in your hard-coded stats)
-                votes = {"A": self.m_samples if winner_side == "A" else 0,
-                        "B": self.m_samples if winner_side == "B" else 0}
-
-                # --- Hard-coded stats (ONLY in perfect mode) ---
-                stats = {
-                    "batch_num": batch_num,
-                    "total_comparison_num": cmp_offset + k + 1,
-                    "winner": winner_side,
-                    # extras (if your downstream expects them present)
-                    "error": None,
-                }
-
-                # Final result payload (matches your schema)
-                result = {
-                    "idx_a": idx_a,
-                    "idx_b": idx_b,
-                    "champion_idx": champion,
-                    "votes": votes,                 # kept for compatibility
-                    "responses": [],                # no LLM
-                    "group_reflection": None,       # no LLM
-                    "full_prompt": "",              # no LLM
-                    **stats,
-                }
-
-                # Also attach your “final results” hard-coded fields here:
-                # (mirrors your example; vote_ratio_a/b set to the winner label)
-                result.update({
-                    "batch_num": result.get("batch_num"),
-                    "comparison_num": result.get("total_comparison_num"),
-                    "total_votes": 1,
-                    "vote_ratio_a": winner_side,
-                    "vote_ratio_b": winner_side,
-                    "entropy": 0,
-                    "confidence": 1,
-                })
-
-                batch_results.append(result)
-                print(f"    Votes: {votes}, Winner: {champion}")
-
-                # Keep cumulative bookkeeping identical to LLM path
-                self._update_cumulative_votes(idx_a, idx_b, votes)
-                self.compared_pairs.add((min(idx_a, idx_b), max(idx_a, idx_b)))
-
-            self.previous_winners = list(set(batch_winners))
-            return batch_results
-
+ 
         # --- Original LLM path for non-perfect models ---
         for k, (idx_a, idx_b) in enumerate(pairs):
             print(f"\n  Pair {k+1}/{len(pairs)}: {idx_a} vs {idx_b}")
