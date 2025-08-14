@@ -114,9 +114,6 @@ class BatchPrefLearning:
                 self.utility_model._debug_X()
             else:
                 raise ValueError("model_type must be 'logistic' or 'gp'")
-        if model_type == 'perfect':
-
-            self.utility_model :UtilityModel = FixedWeightedUtilityModel(weights, weights.keys())
         # Training storage for duels (common)
         self.X_delta: List[np.ndarray] = []
         self.y01: List[int] = []
@@ -161,7 +158,7 @@ class BatchPrefLearning:
             p_i = 1.0 / (1.0 + np.exp(-(mu[i] - mu[j])))
             p_j = 1.0 - p_i
             return p_i * ei_i + p_j * ei_j
-        if self.model_type == 'logistic' or self.model_type == 'perfect':
+        if self.model_type == 'logistic':
 
             S = 256
             U = utility_model.sample_utilities(feat, n_samples=S)
