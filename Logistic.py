@@ -21,12 +21,35 @@ class LinearLogisticModel(UtilityModel):
         self._lr = LogisticRegression(C=C)
         self._trained = False
         self._rng = rng or np.random.default_rng()
-
     def fit_on_duels(self, X_delta: np.ndarray, y01: np.ndarray) -> None:
         if X_delta.size == 0:
             return
+
+        # Ensure 2D features and 1D labels
+        if X_delta.ndim == 1:
+            X_delta = X_delta.reshape(-1, 1)
+        y01 = y01.ravel()
+
+        # If all labels identical, flip exactly ONE example (and negate its delta)
+        if y01.size >= 2 and (np.all(y01 == 0) or np.all(y01 == 1)):
+            # pick the row with the largest norm (more informative flip); fallback to 0
+            try:
+                idx = int(np.argmax(np.linalg.norm(X_delta, axis=1)))
+            except Exception:
+                idx = 0
+            y01 = y01.copy()
+            X_delta = X_delta.copy()
+            y01[idx] = 1 - y01[idx]
+            X_delta[idx] = -X_delta[idx]
+
+        # If there's still only one unique class (e.g., n==1), bail gracefully
+        if np.unique(y01).size < 2:
+            # You could set a flag and skip fitting until you have both classes.
+            return
+
         self._lr.fit(X_delta, y01)
         theta_hat = self._lr.coef_.ravel()
+
         # Laplace covariance at MAP
         p = expit(X_delta @ theta_hat)
         W = p * (1 - p)
@@ -37,8 +60,10 @@ class LinearLogisticModel(UtilityModel):
             Sigma = inv(H)
         except np.linalg.LinAlgError:
             Sigma = inv(H + 1e-6 * np.eye(H.shape[1]))
+
         self.theta_mean, self.Sigma = theta_hat, Sigma
         self._trained = True
+
 
     def posterior_mean_util(self, X: np.ndarray) -> np.ndarray:
         if not self._trained or self.theta_mean is None:

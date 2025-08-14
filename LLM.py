@@ -62,17 +62,10 @@ class FreeLLMPreferenceClient:
 
         # ----- Base prompt (includes two-in-three priority) -----
         base = (
-            "You are an experienced University Registrar. Your absolute top priority is ensuring no student has a simultaneous conflict. "
-            "After that, your next most critical goal is to minimize the number of students facing three exams in a 24-hour period, "
-            "as this causes the most stress. Finally, use the number of back-to-back exams as a tie-breaker to choose between "
-            "otherwise equal schedules. Your goal is to find the schedule that best reflects these priorities. "
             "Definitions: conflicts is the number of students with exams scheduled at the same time; "
             "quints is 5 exams in a row; quads is 4 in a row; triples is 3 in a row; "
             "b2b is back-to-back exams; two in three is 2 exams within 24 hours; "
-            "three in 24 is 3 exams within 24 hours. "
-            "University policy: conflicts and 3 exams in 24 hours require one of the exams to be rescheduled. "
-            "Strongly minimize in this priority order: conflicts, three in 24 hours, then minimize b2b."
-        )
+            "three in 24 is 3 exams within 24 hours. "        )
 
         # Pairwise templates
         self.prompt_pairwise_verbose = base + (
