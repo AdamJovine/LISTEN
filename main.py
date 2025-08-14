@@ -64,7 +64,7 @@ client = FreeLLMPreferenceClient(
 )
 
 # Configuration
-hists = [True,False]
+hists = [True]#[True,False]
 prompts = [b2b_prompt,registrar_prompt]
 pref_modes = [ 'util']  # New loop for preference mode
 
@@ -77,7 +77,7 @@ for pref_mode in pref_modes:
                     
                     # Build history filename
                     history_filename = (
-                        f"cheapbig_batch_pref_history_"
+                        f"perfbig_batch_pref_history_"
                         f"{pref_mode}_"  # Add preference mode to filename
                         f"{m}_"
                         f"run{i}_"

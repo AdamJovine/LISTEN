@@ -15,16 +15,26 @@ venv/
 
 # Logs / temps / large junk
 *.log
-*.csv
 *.sqlite
 *.db
 *.tmp
 *.bak
+
+# CSVs except data.csv
+*.csv
 !data.csv
+
+# Slurm job outputs
+p1_job_*.out
+p1_job_*.err
+
+# Logs directory
+logs/
 
 # Node (if any)
 node_modules/
 dist/
 build/
 
+# Environment files
 .env

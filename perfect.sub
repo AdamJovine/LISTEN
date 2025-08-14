@@ -1,0 +1,16 @@
+#!/bin/bash
+#SBATCH -J p1_job              # Job name
+#SBATCH -o p1_job_%j.out       # Standard output
+#SBATCH -e p1_job_%j.err       # Standard error
+#SBATCH -N 1                   # Number of nodes
+#SBATCH --ntasks=1             # Run a single task
+#SBATCH --cpus-per-task=2      # Request 2 CPUs
+#SBATCH --mem=20000            # Memory in MB (20 GB)
+#SBATCH -t 2:00:00              # Time limit (hh:mm:ss)
+#SBATCH --partition=frazier    # Or whatever partition you use
+
+# Activate your conda or module environment if needed
+# source ~/.bashrc
+# conda activate bo-opt
+
+python /home/asj53/LISTEN/LISTEN/p1.py

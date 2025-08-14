@@ -118,8 +118,20 @@ class BatchPrefLearningUtilityBased(BatchPrefLearning):
         Override to use utility-based voting instead of LLM calls.
         All voters will agree since utility is deterministic.
         """
-        winner, utility_a, utility_b = self._make_utility_based_comparison(idx_a, idx_b)
-
+        sched_a = dict(zip(self.metrics, self.feat[idx_a]))
+        sched_b = dict(zip(self.metrics, self.feat[idx_b]))
+        print('sched a ',sched_a )
+        sched_b = self.feat[idx_b]
+        print('sche b' , sched_b)
+        # evening/morning b2b'].astype(float) + self.df['other b2b' 
+        utility_a = -sched_a['evening/morning b2b'] - sched_b['other b2b']
+        utility_b = -sched_b['evening/morning b2b'] - sched_b['other b2b']
+        #winner =  #utility_a, utility_b = #self._make_utility_based_comparison(idx_a, idx_b)
+        winner = 'A'
+        if utility_a > utility_b:
+            winner = "A"
+        elif utility_b > utility_a:
+            winner = "B"
         # Since utility is deterministic, all "voters" would pick the same winner
         votes = {"A": 0, "B": 0}
         votes[winner] = n_samples
@@ -129,8 +141,7 @@ class BatchPrefLearningUtilityBased(BatchPrefLearning):
         responses = [(winner, reason, None) for _ in range(n_samples)]
 
         # Create schedule dictionaries for consistency
-        sched_a = dict(zip(self.metrics, self.feat[idx_a]))
-        sched_b = dict(zip(self.metrics, self.feat[idx_b]))
+
 
         # Update voter reflections
         for voter_id in range(n_samples):
@@ -187,8 +198,20 @@ class BatchPrefLearningUtilityBased(BatchPrefLearning):
             print(f"\n  Pair {k+1}/{len(pairs)}: {idx_a} vs {idx_b}")
 
             # Utility-based comparison
-            winner, utility_a, utility_b = self._make_utility_based_comparison(idx_a, idx_b)
-
+            #winner, utility_a, utility_b = self._make_utility_based_comparison(idx_a, idx_b)
+            sched_a = dict(zip(self.metrics, self.feat[idx_a]))
+            sched_b = dict(zip(self.metrics, self.feat[idx_b]))
+            print('sched a ',sched_a )
+            print('sche b' , sched_b)
+            # evening/morning b2b'].astype(float) + self.df['other b2b' 
+            utility_a = -sched_a['evening/morning b2b'] - sched_b['other b2b']
+            utility_b = -sched_b['evening/morning b2b'] - sched_b['other b2b']
+            #winner =  #utility_a, utility_b = #self._make_utility_based_comparison(idx_a, idx_b)
+            winner = 'A'
+            if utility_a > utility_b:
+                winner = "A"
+            elif utility_b > utility_a:
+                winner = "B"
             # Create consistent vote results (all voters agree in utility-based mode)
             votes = {"A": 0, "B": 0}
             votes[winner] = self.m_samples
