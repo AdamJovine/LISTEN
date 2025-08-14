@@ -3,11 +3,18 @@ import numpy as np
 import concurrent.futures
 import time
 import random
-from collections import defaultdict
+from collections import defaultdict, Counter
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import Matern
 from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegression
 from typing import Dict, List, Optional, Tuple, Set
+from LLM import FreeLLMPreferenceClient
+import os 
 from Logistic import LinearLogisticModel
 from GP import GPUtilityModel
+from scipy.stats import norm
+from scipy.special import expit
 
 # batch_pref_learning.py
 import pandas as pd
@@ -20,7 +27,18 @@ from typing import Dict, List, Optional, Tuple
 from sklearn.impute import SimpleImputer
 
 from Utilitymodel import UtilityModel
-
+btb_weight  = {
+    "conflicts": 000,
+    "quints": 0,
+    "quads": 0,
+    "four in five slots": 0,
+    "triple in 24h (no gaps)": 00,
+    "triple in same day (no gaps)": 00,
+    "three in four slots": 0,
+    "evening/morning b2b": -1,
+    "other b2b": -1,
+    "two in three slots": 0,
+} 
 
 class BatchPrefLearning:
     """
@@ -46,6 +64,7 @@ class BatchPrefLearning:
         n_theta_samples: int = 64,
         exploration_rate: float = 0.0,
         utility_cols: Optional[int] = None,
+        weights = btb_weight, 
     ):
         # Basic config
         self.batch_size = batch_size
@@ -69,28 +88,35 @@ class BatchPrefLearning:
         self.all_idx = list(range(len(self.df)))
 
         # Acquisition
-        self.acquisition = PreferenceAcquisition(
-            PrefAcquisitionConfig(
-                mode=acq_mode,
-                n_theta_samples=n_theta_samples,
-                exploration_rate=exploration_rate,
-                utility_cols=utility_cols,
-            )
-        )
 
         # Utility model
         self.model_type = model_type
         if model_type == "logistic":
+            #print('log ' )
             self.utility_model: UtilityModel = LinearLogisticModel(C=1.0)
         elif model_type == "gp":
-            self.utility_model = GPUtilityModel(kernel=Matern(nu=2.5))
-            # prepare item store for GP counts
-            self.utility_model.ensure_item_store(
-                n_items=len(self.feat), X_items=self.feat
+            self.utility_model: UtilityModel = GPUtilityModel(
+                data_csv_path="data.csv",   # only if it has EXACTLY your d objective columns in the same order.
+                                            # If unsure, set to a non-existent path to force fallback to feat-based scaling.
+                n_restarts_first_fit=8,     # give the optimizer more chances on first fit
+                more_restarts=6,            # keep optimizing on refits until freeze_n
+                freeze_n=50,                # freeze earlier so it can stop over-smoothing once you have some data
+                min_votes=1,                # good: keeps training set from collapsing
+                max_items=None,             # remove cap early so you don't accidentally train on a tiny, homogeneous subset
+                random_state=42,
             )
-        else:
-            raise ValueError("model_type must be 'logistic' or 'gp'")
+            self.utility_model.ensure_item_store(
+                n_items=self.feat.shape[0],
+                X_items=self.feat,
+            )
+            # Optional: immediate sanity check on X after scaling
+            if hasattr(self.utility_model, "_debug_X"):
+                self.utility_model._debug_X()
+            else:
+                raise ValueError("model_type must be 'logistic' or 'gp'")
+        if model_type == 'perfect':
 
+            self.utility_model :UtilityModel = FixedWeightedUtilityModel(weights, weights.keys())
         # Training storage for duels (common)
         self.X_delta: List[np.ndarray] = []
         self.y01: List[int] = []
@@ -106,8 +132,56 @@ class BatchPrefLearning:
         # Cumulative votes per item (also used by GP pseudo-utility)
         self.cumulative_votes = defaultdict(lambda: {"for": 0, "against": 0})
 
-    # ---------------------------
-    # Pair selection
+
+    def _ei(self,mu, sigma, best, xi=0.0):
+        # standard GP EI; safe if sigma=0
+        sigma = np.asarray(sigma, dtype=float)
+        Z = np.zeros_like(mu, dtype=float)
+        mask = sigma > 0
+        Z[mask] = (mu[mask] - (best + xi)) / sigma[mask]
+        ei = np.zeros_like(mu, dtype=float)
+        ei[mask] = (mu[mask] - (best + xi)) * norm.cdf(Z[mask]) + sigma[mask] * norm.pdf(Z[mask])
+        return np.maximum(ei, 0.0)
+
+    def compute_score(self, i: int, j: int, feat: np.ndarray, utility_model, extra) -> float:
+        # get μ, σ from your GP
+        if self.model_type == 'gp':
+            # OLD (wrong – unscaled):
+            # mu, std = utility_model.gp.predict(feat, return_std=True)
+
+            # NEW (scaled):
+            mu, std = utility_model.predict_mu_std(feat)
+            best = float(np.max(mu))
+            # optional: quick sanity
+            # print('unique mu/std:', np.unique(mu).size, np.unique(std).size)
+
+            ei_i = float(self._ei(mu[i], std[i], best))
+            ei_j = float(self._ei(mu[j], std[j], best))
+
+            p_i = 1.0 / (1.0 + np.exp(-(mu[i] - mu[j])))
+            p_j = 1.0 - p_i
+            return p_i * ei_i + p_j * ei_j
+        if self.model_type == 'logistic' or self.model_type == 'perfect':
+
+            S = 256
+            U = utility_model.sample_utilities(feat, n_samples=S)
+            curr_best = U.max(axis=0)                              # (S,)
+
+            # Pairwise outcome probs per sample (logistic on utility difference)
+            diff = U[i, :] - U[j, :]                               # (S,)
+            p_i = expit(diff)                                      # (S,)
+            p_j = 1.0 - p_i
+
+            # Expected best after querying (choose winner’s utility vs current best)
+            best_if_i = np.maximum(U[i, :], curr_best)
+            best_if_j = np.maximum(U[j, :], curr_best)
+            best_after = p_i * best_if_i + p_j * best_if_j         # (S,)
+            #print('best a ' , best_after)
+            score = float(np.mean(best_after - curr_best))
+            return score
+        print('fail')
+        return 0
+
     # ---------------------------
     def _select_initial_batch(self) -> List[Tuple[int, int]]:
         if hasattr(self, "initial_pairs"):
@@ -145,7 +219,7 @@ class BatchPrefLearning:
 
                 scored = []
                 for challenger in challengers:
-                    score = self.acquisition.compute_score(
+                    score = self.compute_score(
                         winner, challenger, self.feat, self.utility_model, None
                     )
                     scored.append(((winner, challenger), score))
@@ -171,10 +245,8 @@ class BatchPrefLearning:
 
         scored_pool = [
             (
-                (i, j),
-                self.acquisition.compute_score(
-                    i, j, self.feat, self.utility_model, None
-                ),
+            (i, j),
+            self.compute_score(i, j, self.feat, self.utility_model, None)
             )
             for (i, j) in pool
         ]
@@ -187,12 +259,78 @@ class BatchPrefLearning:
     # Voting & history
     # ---------------------------
     def _collect_batch_comparisons(
-        self, pairs: List[Tuple[int, int]], prompt_init: Optional[str] = None
-    ) -> List[Dict]:
+            self, pairs: List[Tuple[int, int]], prompt_init: Optional[str] = None
+        ) -> List[Dict]:
         print(f"\nCollecting comparisons for batch of {len(pairs)} pairs...")
         batch_results: List[Dict] = []
         batch_winners: List[int] = []
 
+        # --- PERFECT mode: no LLM, hard-code stats ---
+        if getattr(self, "model_type", None) == "perfect":
+            X_all = getattr(self, "feat", getattr(self, "features", None))
+            if X_all is None:
+                raise ValueError("perfect mode requires a feature matrix on self.feat or self.features")
+
+            u = self.utility_model.posterior_mean_util(X_all)
+            # Base offset if you track a running total externally
+            cmp_offset = int(getattr(self, "total_comparison_num", 0))
+            batch_num = getattr(self, "batch_num", None)
+
+            for k, (idx_a, idx_b) in enumerate(pairs):
+                print(f"\n  Pair {k+1}/{len(pairs)}: {idx_a} vs {idx_b}")
+                ua, ub = float(u[idx_a]), float(u[idx_b])
+                winner_side = "A" if ua >= ub else "B"
+                champion = idx_a if winner_side == "A" else idx_b
+                batch_winners.append(champion)
+
+                # Fabricate votes to keep interface consistent (not used in your hard-coded stats)
+                votes = {"A": self.m_samples if winner_side == "A" else 0,
+                        "B": self.m_samples if winner_side == "B" else 0}
+
+                # --- Hard-coded stats (ONLY in perfect mode) ---
+                stats = {
+                    "batch_num": batch_num,
+                    "total_comparison_num": cmp_offset + k + 1,
+                    "winner": winner_side,
+                    # extras (if your downstream expects them present)
+                    "error": None,
+                }
+
+                # Final result payload (matches your schema)
+                result = {
+                    "idx_a": idx_a,
+                    "idx_b": idx_b,
+                    "champion_idx": champion,
+                    "votes": votes,                 # kept for compatibility
+                    "responses": [],                # no LLM
+                    "group_reflection": None,       # no LLM
+                    "full_prompt": "",              # no LLM
+                    **stats,
+                }
+
+                # Also attach your “final results” hard-coded fields here:
+                # (mirrors your example; vote_ratio_a/b set to the winner label)
+                result.update({
+                    "batch_num": result.get("batch_num"),
+                    "comparison_num": result.get("total_comparison_num"),
+                    "total_votes": 1,
+                    "vote_ratio_a": winner_side,
+                    "vote_ratio_b": winner_side,
+                    "entropy": 0,
+                    "confidence": 1,
+                })
+
+                batch_results.append(result)
+                print(f"    Votes: {votes}, Winner: {champion}")
+
+                # Keep cumulative bookkeeping identical to LLM path
+                self._update_cumulative_votes(idx_a, idx_b, votes)
+                self.compared_pairs.add((min(idx_a, idx_b), max(idx_a, idx_b)))
+
+            self.previous_winners = list(set(batch_winners))
+            return batch_results
+
+        # --- Original LLM path for non-perfect models ---
         for k, (idx_a, idx_b) in enumerate(pairs):
             print(f"\n  Pair {k+1}/{len(pairs)}: {idx_a} vs {idx_b}")
             votes, responses, refl_summary, full_prompt, stats = (
@@ -223,12 +361,12 @@ class BatchPrefLearning:
             batch_results.append(result)
             print(f"    Votes: {votes}, Winner: {champion}")
 
-            # Update cumulative votes and compared set
             self._update_cumulative_votes(idx_a, idx_b, votes)
             self.compared_pairs.add((min(idx_a, idx_b), max(idx_a, idx_b)))
 
         self.previous_winners = list(set(batch_winners))
         return batch_results
+
 
     def _update_cumulative_votes(self, idx_a: int, idx_b: int, votes: Dict[str, int]):
         self.cumulative_votes[idx_a]["for"] += votes["A"]
@@ -498,11 +636,11 @@ class BatchPrefLearning:
                 "idx_a": rec["idx_a"],
                 "idx_b": rec["idx_b"],
                 "champion_idx": rec.get("champion_idx"),
-                "total_votes": rec["total_votes"],
-                "vote_ratio_a": rec["vote_ratio_a"],
-                "vote_ratio_b": rec["vote_ratio_b"],
-                "entropy": rec["entropy"],
-                "confidence": rec["confidence"],
+                "total_votes": 1, #rec["total_votes"],
+                "vote_ratio_a":rec["winner"],  #rec["vote_ratio_a"],
+                "vote_ratio_b": rec["winner"],  #rec["vote_ratio_b"],
+                "entropy": 0, #rec["entropy"],
+                "confidence":1, # rec["confidence"],
                 "winner": rec["winner"],
             }
             for i, (choice, reason, reflection) in enumerate(rec["responses"]):
@@ -511,28 +649,29 @@ class BatchPrefLearning:
                 row["choice"] = choice
                 row["reason"] = reason
                 rows.append(row)
-        pd.DataFrame(rows).to_csv(self.history_file, index=False)
+        logs_dir = os.path.join(os.path.dirname(__file__), "logs")
+        # Build the full path for the history file
+        history_path = os.path.join(logs_dir, os.path.basename(self.history_file))
+
+        # Save DataFrame to CSV
+        pd.DataFrame(rows).to_csv(history_path, index=False)
+
         print(f"Saved detailed history to {self.history_file}")
 
     def _save_batch_summary(self):
         batch_rows = []
         for batch in self.batch_history:
-            vote_margins, entropies, confidences = [], [], []
+            #vote_margins, entropies, confidences = [], [], []
             for r in batch["results"]:
-                vote_margins.append(abs(r["vote_ratio_a"] - r["vote_ratio_b"]))
-                entropies.append(r["entropy"])
-                confidences.append(r["confidence"])
-            batch_rows.append(
-                {
-                    "batch_num": batch["batch_num"],
-                    "n_comparisons": batch["n_comparisons"],
-                    "total_comparisons_so_far": batch["total_comparisons_so_far"],
-                    "avg_vote_margin": np.mean(vote_margins) if vote_margins else 0,
-                    "avg_entropy": np.mean(entropies) if entropies else 0,
-                    "avg_confidence": np.mean(confidences) if confidences else 0,
-                    "min_confidence": min(confidences) if confidences else 0,
-                    "max_confidence": max(confidences) if confidences else 0,
-                }
+                #vote_margins.append(abs(r["vote_ratio_a"] - r["vote_ratio_b"]))
+                #entropies.append(r["entropy"])
+                #confidences.append(r["confidence"])
+                batch_rows.append(
+                    {
+                        "batch_num": batch["batch_num"],
+                        "n_comparisons": batch["n_comparisons"],
+                        "total_comparisons_so_far": batch["total_comparisons_so_far"]
+                    }
             )
         pd.DataFrame(batch_rows).to_csv("batch_summary.csv", index=False)
         print("Saved batch summary to batch_summary.csv")
