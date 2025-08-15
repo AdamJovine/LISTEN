@@ -1,16 +1,23 @@
+local = True
+util = False 
 import glob
 import pandas as pd
 from LLM import FreeLLMPreferenceClient
+from oss import LocalGroqLikeClient
+from Experiment import ScheduleComparisonExperiment
+
+from LISTEN import CustomDuelingBanditOptimizer, DuelingBanditOptimizer
 from batchPref import BatchPrefLearning
-from perfect import BatchPrefLearningUtilityBased  # Import the utility-based class
+from perfect import SimpleUtilityPreferenceClient  # Import the utility-based class
+from p1 import SimpleB2BPreferenceClient 
+from prompt import PromptTemplate
+from singleOss import get_local_client
+
 import os
 from dotenv import load_dotenv
-
 # Your custom prompt for the Registrar
 registrar_prompt = """
-You are an experienced University Registrar. Your absolute top priority is ensuring no student has a simultaneous conflict.
-After that, your next most critical goal is to minimize the number of students facing three exams in a 24-hour period, 
-as this causes the most stress. 
+You are an experienced University Registrar. 
 """
 
 b2b_prompt = """
@@ -19,7 +26,7 @@ You are an experienced University Registrar. Your absolute top priority is ensur
 
 # Load data
 current_dir = os.path.dirname(os.path.abspath(__file__))
-data_path = os.path.join(current_dir, "data.csv")
+data_path = os.path.join(current_dir, "input/data.csv")
 df = pd.read_csv(data_path)
 
 # Filter out rows with NaN values in utility-relevant columns
@@ -54,96 +61,100 @@ df = df.dropna(subset=metric_columns)
 load_dotenv()
 api_key = os.getenv("GROQ_API_KEY")
 
-client = FreeLLMPreferenceClient(
-    provider="groq",
-    api_key=api_key,
-    model_name="openai/gpt-oss-20b",
-    simple=False,
-    rate_limit_delay=0.1,
-    max_tokens=1024,
-)
+#client = FreeLLMPreferenceClient(
+#    provider="groq",
+#    api_key=api_key,
+#    model_name="openai/gpt-oss-20b",
+#    simple=False,
+#    rate_limit_delay=0.1,
+#    max_tokens=1024,
+#)
+if local : 
+    #client = LocalGroqLikeClient(
+    #    model_id="unsloth/gpt-oss-20b-BF16",   # works on 3090 with offload
+    #    device_map="auto",
+    #    # leave None to use the default offload for 24GB cards:
+        # max_memory={0: "22GiB", "cpu": "50GiB"},
+    #)
+    client = get_local_client("unsloth/gpt-oss-20b-BF16")
+
+    # Then adapt your existing client to use this "Groq-like" object:
+    #class FreeLLMPreferenceClientLocal(FreeLLMPreferenceClient):
+    #    def __init__(self, *args, **kwargs):
+    #        # ignore api_key/provider, keep your existing knobs
+    #        kwargs["provider"] = "groq"  # keep parent happy
+    #        super().__init__(*args, **kwargs)
+    #        self._groq = _local               # <-- swap in the local client
+    #        self.model_name = "unsloth/gpt-oss-20b-BF16"  # default model
+    #
+    # now the rest of your code is unchanged
+    #client = FreeLLMPreferenceClientLocal(simple=True)
+if util : 
+    client = SimpleB2BPreferenceClient()
 
 # Configuration
-hists = [True]#[True,False]
-prompts = [b2b_prompt,registrar_prompt]
-pref_modes = [ 'util']  # New loop for preference mode
+#pref_modes = [ 'LLM']  # New loop for preference mode
+hists = [True]  # [True, False]
+prompts = [b2b_prompt, registrar_prompt]  # Your prompt templates
+model_types = ["logistic"]  # ["logistic", "gp"]
+acquisition_functions = ["eubo"]  # ["eubo", "ucb", "thompson", "info_gain"]
 
-# Main nested loops
-for pref_mode in pref_modes:
-    for m in ["logistic"]:  # "gp" or 'logistic'
-        for i in range(5):
-            for prompt_idx in [0]:  # range(2) to use both prompts
-                for hist in hists:
+# Experimental parameters
+BATCH_SIZE = 5
+N_BATCHES = 50
+N_CHAMPIONS = 5
+UTIL_MODE = True  # True for utility simulation, False for LLM
+LOCAL = True  # Your local flag
+
+# Main experimental loops
+for model_type in model_types:
+    for run_idx in range(1):  # Number of runs
+        for prompt_idx in [0]:  # Which prompts to use
+            for use_history in hists:
+                for acq_func in acquisition_functions:
                     
                     # Build history filename
                     history_filename = (
-                        f"perfbig_batch_pref_history_"
-                        f"{pref_mode}_"  # Add preference mode to filename
-                        f"{m}_"
-                        f"run{i}_"
+                        f"dueling_bandit_history_"
+                        f"util{UTIL_MODE}_loc{LOCAL}_"
+                        f"{model_type}_"
+                        f"acq{acq_func}_"
+                        f"run{run_idx}_"
                         f"prompt{prompt_idx}_"
-                        f"history{hist}.csv"
+                        f"history{use_history}.csv"
                     )
                     
                     print(f"\n{'='*60}")
-                    print(f"Starting run: {pref_mode} mode, model={m}, run={i}, prompt={prompt_idx}, history={hist}")
+                    print(f"Starting run: model={model_type}, acq={acq_func}, "
+                          f"run={run_idx}, prompt={prompt_idx}, history={use_history}")
                     print(f"History file: {history_filename}")
                     print(f"{'='*60}\n")
                     
-                    if pref_mode == 'LLM':
-                        # Use LLM-based preference learning
-                        bp = BatchPrefLearning(
-                            schedules_df=df,
-                            llm_client=client,
-                            metric_columns=metric_columns,
-                            history_file=history_filename,
-                            m_samples=1,  # one LLM "voter" per pair
-                            batch_size=5,
-                            model_type=m,
-                            reasoning_history=hist,
-                        )
-                        
-                        # Run with prompt for LLM mode
-                        final_rankings = bp.run(
-                            n_batches=50, 
-                            prompt_init=prompts[prompt_idx], 
-                            save_history=True
-                        )
-                        
-                    else:  # pref_mode == 'util'
-                        # Use utility-based preference learning
-                        bp = BatchPrefLearningUtilityBased(
-                            schedules_df=df,
-                            llm_client=None,  # No LLM client needed
-                            metric_columns=metric_columns,
-                            history_file=history_filename,
-                            m_samples=1,  # Keep consistent with LLM version
-                            batch_size=5,
-                            model_type=m,
-                            reasoning_history=hist,  # Will be ignored but kept for consistency
-                        )
-                        
-                        # Run without prompt for utility mode (prompt will be ignored)
-                        final_rankings = bp.run(
-                            n_batches=50,
-                            prompt_init=None,  # No prompt needed for utility-based
-                            save_history=True
-                        )
+                    # Create experiment runner
+                    experiment = ScheduleComparisonExperiment(
+                        schedules_df=df,  # Your dataframe
+                        metric_columns=metric_columns,  # Your metric columns
+                        llm_client= client,  # Your LLM client
+                        use_llm=not UTIL_MODE,
+                        prompt_template=PromptTemplate(reasoning_history = use_history , utility_prompt = prompts[prompt_idx], metric_columns = metric_columns)
+                    )
                     
-                    # Inspect top schedules
-                    print(f"\nTop 5 schedules for {pref_mode} mode:")
-                    print(final_rankings.head())
+                    # Run experiment
+                    results = experiment.run_experiment(
+                        model_type=model_type,
+                        batch_size=BATCH_SIZE,
+                        n_batches=N_BATCHES,
+                        n_champions=N_CHAMPIONS,
+                        acquisition=acq_func,
+                        history_file=history_filename,
+                        with_reasoning_history=use_history,
+                        save_interval=5  # Save every 5 batches
+                    )
                     
-                    # Optional: Save final rankings with mode info
-                    rankings_filename = history_filename.replace('.csv', '_final_rankings.csv')
-                    final_rankings['pref_mode'] = pref_mode
-                    final_rankings['model_type'] = m
-                    final_rankings['run_id'] = i
-                    final_rankings['prompt_idx'] = prompt_idx
-                    final_rankings['history_enabled'] = hist
-                    final_rankings.to_csv(rankings_filename, index=False)
-                    print(f"Saved final rankings to: {rankings_filename}")
-
-print("\n" + "="*60)
-print("ALL RUNS COMPLETE")
-print("="*60)
+                    # Process results
+                    if 'final_ranking' in results:
+                        print(f"\nExperiment completed successfully!")
+                        print(f"Top schedule: {results['top_10_schedules'][0]}")
+                        print(f"Total comparisons: {results['total_comparisons']}")
+                    else:
+                        print(f"\nExperiment failed: {results.get('error', 'Unknown error')}")

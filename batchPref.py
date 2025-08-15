@@ -129,7 +129,7 @@ class BatchPrefLearning:
         # Cumulative votes per item (also used by GP pseudo-utility)
         self.cumulative_votes = defaultdict(lambda: {"for": 0, "against": 0})
 
-
+    """
     def _ei(self,mu, sigma, best, xi=0.0):
         # standard GP EI; safe if sigma=0
         sigma = np.asarray(sigma, dtype=float)
@@ -145,21 +145,17 @@ class BatchPrefLearning:
         if self.model_type == 'gp':
             # OLD (wrong – unscaled):
             # mu, std = utility_model.gp.predict(feat, return_std=True)
-
             # NEW (scaled):
             mu, std = utility_model.predict_mu_std(feat)
             best = float(np.max(mu))
             # optional: quick sanity
             # print('unique mu/std:', np.unique(mu).size, np.unique(std).size)
-
             ei_i = float(self._ei(mu[i], std[i], best))
             ei_j = float(self._ei(mu[j], std[j], best))
-
             p_i = 1.0 / (1.0 + np.exp(-(mu[i] - mu[j])))
             p_j = 1.0 - p_i
             return p_i * ei_i + p_j * ei_j
         if self.model_type == 'logistic':
-
             S = 256
             U = utility_model.sample_utilities(feat, n_samples=S)
             curr_best = U.max(axis=0)                              # (S,)
@@ -178,7 +174,7 @@ class BatchPrefLearning:
             return score
         print('fail')
         return 0
-
+    """
     # ---------------------------
     def _select_initial_batch(self) -> List[Tuple[int, int]]:
         if hasattr(self, "initial_pairs"):
@@ -216,9 +212,12 @@ class BatchPrefLearning:
 
                 scored = []
                 for challenger in challengers:
-                    score = self.compute_score(
+                    score = self.utility_model.compute_score(
                         winner, challenger, self.feat, self.utility_model, None
-                    )
+                    )                    
+                    #score = self.compute_score(
+                    #    winner, challenger, self.feat, self.utility_model, None
+                    #)
                     scored.append(((winner, challenger), score))
                 scored.sort(key=lambda t: t[1], reverse=True)
                 if scored:
@@ -229,29 +228,6 @@ class BatchPrefLearning:
         # fallback: if model not ready, random; else, sample and score pairs
         if not self.utility_model.ready():
             return self._select_initial_batch()
-
-        pool = []
-        tries = 0
-        target = self.batch_size * 10
-        while len(pool) < target and tries < target * 5:
-            a, b = np.random.choice(self.all_idx, 2, replace=False)
-            p = (min(a, b), max(a, b))
-            if p not in self.compared_pairs:
-                pool.append((a, b))
-            tries += 1
-
-        scored_pool = [
-            (
-            (i, j),
-            self.compute_score(i, j, self.feat, self.utility_model, None)
-            )
-            for (i, j) in pool
-        ]
-        scored_pool.sort(key=lambda t: t[1], reverse=True)
-        return [
-            p for p, _ in scored_pool[: self.batch_size]
-        ] or self._select_initial_batch()
-
     # ---------------------------
     # Voting & history
     # ---------------------------
@@ -262,8 +238,6 @@ class BatchPrefLearning:
         batch_results: List[Dict] = []
         batch_winners: List[int] = []
 
-        # --- PERFECT mode: no LLM, hard-code stats ---
- 
         # --- Original LLM path for non-perfect models ---
         for k, (idx_a, idx_b) in enumerate(pairs):
             print(f"\n  Pair {k+1}/{len(pairs)}: {idx_a} vs {idx_b}")
@@ -290,6 +264,8 @@ class BatchPrefLearning:
                 "responses": responses,
                 "group_reflection": refl_summary,
                 "full_prompt": full_prompt,
+                'sched_a' : str(self.feat[idx_a]) , 
+                'sched_b' : str(self.feat[idx_b]) , 
                 **stats,
             }
             batch_results.append(result)
@@ -454,6 +430,7 @@ class BatchPrefLearning:
                 full_prompt_parts.append("\n\n")
             full_prompt_parts.append(raw_prompt)
             full_prompt = "".join(full_prompt_parts)
+            print('fll ' , full_prompt)
             raw = self.client._call_api(full_prompt)
             choice, reason = self.client._parse_pairwise(raw)
 

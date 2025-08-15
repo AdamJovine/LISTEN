@@ -1,8 +1,8 @@
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
-api_key = os.getenv("GROQ_API_KEY")
+#load_dotenv()
+#api_key = os.getenv("GROQ_API_KEY")
 
 import time
 import re
@@ -42,8 +42,8 @@ class FreeLLMPreferenceClient:
         self.provider = "groq"
         self.api_key = api_key  # or os.getenv("GROQ_API_KEY")
         if not self.api_key:
-            raise RuntimeError("GROQ_API_KEY is not set. Export it or pass api_key=...")
-
+            #raise RuntimeError("GROQ_API_KEY is not set. Export it or pass api_key=...")
+            self.api_key = ''  
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.max_retries = max_retries
@@ -116,6 +116,7 @@ class FreeLLMPreferenceClient:
 
         for attempt in range(self.max_retries):
             try:
+                print('prompt  ' , prompt)
                 self._rate_limit()
                 completion = self._groq.chat.completions.create(
                     model=self.model_name,
@@ -150,6 +151,7 @@ class FreeLLMPreferenceClient:
         )
 
     def _call_api(self, prompt: str, stream: Optional[bool] = None) -> str:
+        print('p' , prompt )
         return self._groq_chat(prompt, stream=stream)
 
     # ------------------ Pairwise API ------------------
