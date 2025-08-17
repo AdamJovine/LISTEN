@@ -118,7 +118,7 @@ def get_local_client(
         @torch.inference_mode()
         def _generate_text(self, prompt, temperature, top_p, max_new_tokens, stop=None):
             do_sample = bool(temperature and temperature > 0)
-            print('promp ' , prompt)
+            #print('promp ' , prompt)
             # Tokenize and move to device
             inputs = self.tok(prompt, return_tensors="pt").to(self.model.device)
             input_len = inputs["input_ids"].shape[-1]
@@ -155,14 +155,14 @@ def get_local_client(
 
             return text
 
-        def call_oracle(self, prompt, temperature=None, top_p=None, max_new_tokens=None, stop=None):
+        def call_oracle(self, prompt, sched_a,sched_b,temperature=None, top_p=None, max_new_tokens=None, stop=None):
             if temperature is None: temperature = self.default_temperature
             if top_p is None: top_p = self.default_top_p
             if max_new_tokens is None: max_new_tokens = self.default_max_new_tokens
-            print('prompt , ' , prompt)
+            #print('prompt , ' , prompt)
             txt = self._generate_text(prompt, temperature, top_p, max_new_tokens, stop)
             s = txt.strip()
-            print('s , ' , s)
+            #print('s , ' , s)
             if s.endswith("}"):
                 for c in ("A","B"):
                     if "{%s}"%c in s:

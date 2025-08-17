@@ -25,6 +25,8 @@ class Oracle(ABC):
     def call_oracle(
         self,
         prompt: str,
+        sched_a :dict, 
+        sched_b :dict, 
         temperature: float | None = None,
         top_p: float | None = None,
         max_new_tokens: int | None = None,

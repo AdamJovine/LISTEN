@@ -11,18 +11,11 @@ from batchPref import BatchPrefLearning
 from perfect import SimpleUtilityPreferenceClient  # Import the utility-based class
 from p1 import SimpleB2BPreferenceClient 
 from prompt import PromptTemplate
-from singleOss import get_local_client
+from remoteOss import get_local_client
 
 import os
 from dotenv import load_dotenv
 # Your custom prompt for the Registrar
-registrar_prompt = """
-You are an experienced University Registrar. 
-"""
-
-b2b_prompt = """
-You are an experienced University Registrar. Your absolute top priority is ensuring students have as few back-to-back exams as possible. So minimize evening/morning b2b exams and other b2b exams.
-"""
 
 # Load data
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -30,19 +23,6 @@ data_path = os.path.join(current_dir, "input/data.csv")
 df = pd.read_csv(data_path)
 
 # Filter out rows with NaN values in utility-relevant columns
-utility_columns = ['evening/morning b2b', 'other b2b']
-print(f"Original data shape: {df.shape}")
-print(f"Rows with NaN in utility columns: {df[utility_columns].isna().any(axis=1).sum()}")
-
-# Remove rows with NaN in utility columns
-df = df.dropna(subset=utility_columns)
-
-# Also remove rows with NaN in any metric columns to be safe
-
-
-print(f"Filtered data shape: {df.shape}")
-print(f"Removed {pd.read_csv(data_path).shape[0] - df.shape[0]} rows with NaN values")
-
 # Define metrics (same as LLM version)
 metric_columns = [
     "conflicts",
@@ -90,12 +70,23 @@ if local :
     # now the rest of your code is unchanged
     #client = FreeLLMPreferenceClientLocal(simple=True)
 if util : 
-    client = SimpleB2BPreferenceClient()
+    WEIGHTS = {
+        "conflicts": 000,
+        "quints": 0,
+        "quads": 0,
+        "four in five slots": 0,
+        "triple in 24h (no gaps)": 00,
+        "triple in same day (no gaps)": 00,
+        "three in four slots": 0,
+        "evening/morning b2b": -1,
+        "other b2b": -1,
+        "two in three slots": 0,
+    }
+    client = SimpleUtilityPreferenceClient(weights=WEIGHTS)
 
 # Configuration
 #pref_modes = [ 'LLM']  # New loop for preference mode
 hists = [True]  # [True, False]
-prompts = [b2b_prompt, registrar_prompt]  # Your prompt templates
 model_types = ["logistic"]  # ["logistic", "gp"]
 acquisition_functions = ["eubo"]  # ["eubo", "ucb", "thompson", "info_gain"]
 
@@ -114,7 +105,7 @@ for model_type in model_types:
                 for acq_func in acquisition_functions:
                     
                     # Build history filename
-                    history_filename = (
+                    filename = (
                         f"dueling_bandit_history_"
                         f"util{UTIL_MODE}_loc{LOCAL}_"
                         f"{model_type}_"
@@ -123,6 +114,8 @@ for model_type in model_types:
                         f"prompt{prompt_idx}_"
                         f"history{use_history}.csv"
                     )
+
+                    history_filename = os.path.join(current_dir, "logs" , filename)
                     
                     print(f"\n{'='*60}")
                     print(f"Starting run: model={model_type}, acq={acq_func}, "
@@ -136,7 +129,7 @@ for model_type in model_types:
                         metric_columns=metric_columns,  # Your metric columns
                         llm_client= client,  # Your LLM client
                         use_llm=not UTIL_MODE,
-                        prompt_template=PromptTemplate(reasoning_history = use_history , utility_prompt = prompts[prompt_idx], metric_columns = metric_columns)
+                        prompt_template=PromptTemplate(reasoning_history = use_history , utility_prompt = 'prioritize minimizing triples exams', metric_columns = metric_columns)
                     )
                     
                     # Run experiment

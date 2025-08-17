@@ -66,40 +66,6 @@ class DuelingBanditOptimizer:
         
         # Track utilities over time
         self.utility_history: List[np.ndarray] = []
-        
-    def _collect_preferences(self, pairs: List[Tuple[int, int]]) -> List[ComparisonResult]:
-        """
-        Collect preferences for given pairs.
-        In practice, this would query your LLM or human evaluator.
-        Here we simulate with a ground truth utility function.
-        """
-        results = []
-        
-        for option_a, option_b in pairs:
-            # Simulate preference based on true utility (for testing)
-            # Replace this with actual LLM/human queries
-            #true_utility_a = self._simulate_true_utility(option_a)
-            #true_utility_b = self._simulate_true_utility(option_b)
-            
-            # Add noise to make it probabilistic
-            #prob_a_wins = 1 / (1 + np.exp(-(true_utility_a - true_utility_b)))
-            #a_wins = np.random.random() < prob_a_wins
-            
-            winner = option_a if a_wins else option_b
-            
-            results.append(ComparisonResult(
-                option_a=option_a,
-                option_b=option_b,
-                winner=winner,
-                features_a=self.features[option_a],
-                features_b=self.features[option_b]
-            ))
-            
-            # Mark pair as compared
-            pair_key = (min(option_a, option_b), max(option_a, option_b))
-            self.compared_pairs.add(pair_key)
-        
-        return results
 
     def _update_champions(self):
         """Update the list of champion options based on current model."""
@@ -169,7 +135,9 @@ class DuelingBanditOptimizer:
         
         else:
             # Select challengers for each champion
+            
             for champion in self.current_champions[:self.batch_size]:
+                print('champion' , champion)
                 # Get all possible challengers
                 challengers = [
                     j for j in self.all_options
@@ -200,6 +168,9 @@ class DuelingBanditOptimizer:
                             feat=self.features,
                             acquisition=self.acquisition
                         )
+                        #print('cham ' , champion)
+                        #print('chal , ' , challenger)
+                        #print('score , ' , score,  )
                         scores.append((challenger, score))
                     # Select best challenger
                     if scores:

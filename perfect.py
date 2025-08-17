@@ -47,6 +47,8 @@ class SimpleUtilityPreferenceClient(Oracle):
     def call_oracle(
         self,
         prompt: str,
+        sched_a : dict , 
+        sched_b : dict , 
         temperature: float | None = None,
         top_p: float | None = None,
         max_new_tokens: int | None = None,
@@ -57,12 +59,14 @@ class SimpleUtilityPreferenceClient(Oracle):
         and return ('A'|'B', explanation). Sampling args are ignored.
         """
         try:
-            schedule_a, schedule_b = self._parse_prompt_schedules(prompt)
-            utility_a = self._calculate_utility(schedule_a)
-            utility_b = self._calculate_utility(schedule_b)
-
-            summary_a = self._format_schedule_summary(schedule_a, "Schedule A", utility_a)
-            summary_b = self._format_schedule_summary(schedule_b, "Schedule B", utility_b)
+            #schedule_a, schedule_b = self._parse_prompt_schedules(prompt)
+            utility_a = sum([sched_a[k]*v for k,v in self.weights.items()])#self._calculate_utility(schedule_a)
+            utility_b = sum([sched_b[k]*v for k,v in self.weights.items()])#self._calculate_utility(schedule_b)
+            print(
+                'util a ' , utility_a , 'util b ' , utility_b 
+            )
+            summary_a = ''#self._format_schedule_summary(schedule_a, "Schedule A", utility_a)
+            summary_b = ''#self._format_schedule_summary(schedule_b, "Schedule B", utility_b)
 
             if utility_a >= utility_b:
                 choice = "A"
@@ -159,28 +163,6 @@ class SimpleUtilityPreferenceClient(Oracle):
         else:
             return f"{label}: total utility={utility:.2f}"
 
-    def _parse_prompt_schedules(self, prompt: str) -> Tuple[Dict, Dict]:
-        """
-        Parse a prompt containing Schedule A and Schedule B data.
-        Returns: (schedule_a_dict, schedule_b_dict)
-        """
-        schedule_a = {}
-        schedule_b = {}
-        
-        # Find Schedule A and B lines
-        lines = prompt.split('\n')
-        for line in lines:
-            line = line.strip()
-            if line.startswith('Schedule A:'):
-                # Parse the metrics after "Schedule A:"
-                data_part = line[11:].strip()  # Remove "Schedule A:"
-                schedule_a = self._parse_schedule_line(data_part)
-            elif line.startswith('Schedule B:'):
-                # Parse the metrics after "Schedule B:"
-                data_part = line[11:].strip()  # Remove "Schedule B:"
-                schedule_b = self._parse_schedule_line(data_part)
-        
-        return schedule_a, schedule_b
 
     def _parse_schedule_line(self, data_line: str) -> Dict:
         """
@@ -205,18 +187,6 @@ class SimpleUtilityPreferenceClient(Oracle):
         
         return schedule_dict
 
-    def _call_api(self, prompt: str, stream: Optional[bool] = None) -> str:
-        """
-        Legacy method retained for compatibility with code paths
-        that expect a '{A}' / '{B}' string.
-        """
-        try:
-            schedule_a, schedule_b = self._parse_prompt_schedules(prompt)
-            utility_a = self._calculate_utility(schedule_a)
-            utility_b = self._calculate_utility(schedule_b)
-            return '{A}' if utility_a >= utility_b else '{B}'
-        except Exception as e:
-            return '{A}'
 
     def _parse_pairwise(self, response: str) -> Tuple[str, str]:
         """

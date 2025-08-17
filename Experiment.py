@@ -56,15 +56,16 @@ class ScheduleComparisonExperiment:
         
         schedule_a = self.schedules_df.iloc[idx_a]
         schedule_b = self.schedules_df.iloc[idx_b]
-        
+        sched_a = schedule_a.to_dict()
+        sched_b = schedule_b.to_dict()
         # Format prompt with schedules
         prompt = self.prompt_template.format(
-            schedule_a=schedule_a.to_dict(),
-            schedule_b=schedule_b.to_dict()
+            schedule_a=sched_a,
+            schedule_b=sched_b
         )
 
         # Call LLM (implement based on your LLM client)
-        desicion,reasoning = self.llm_client.call_oracle(prompt)
+        desicion,reasoning = self.llm_client.call_oracle(prompt, sched_a , sched_b )
         print('reasoning, ' , reasoning )
         print('decision ' , desicion)
         if "A" in desicion :
