@@ -19,7 +19,7 @@ import os, time, random, json, subprocess, shlex, socket
 from pathlib import Path
 
 import httpx
-
+import re 
 DEFAULT_MODEL_ID = os.getenv(
     "DEEPSEEK_MODEL_ID", "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
 )
@@ -155,7 +155,7 @@ class _OptimizedRemoteClient:
         *,
         model_id: str = DEFAULT_MODEL_ID,
         timeout_s: float = 120.0,
-        max_retries: int = 4,
+        max_retries: int = 20,
         max_connections: int = 256,
         max_keepalive: int = 64,
         default_seed: Optional[int] = 12345,
@@ -235,6 +235,50 @@ class _OptimizedRemoteClient:
             if i != -1:
                 out = out[:i]
         return out
+    _FINAL_TAG_RE = re.compile(
+        r'^\s*(?:```[a-zA-Z]*\s*)?FINAL\s*[:=\-]?\s*([AB])\b',
+        re.IGNORECASE | re.MULTILINE
+    )
+
+    def _parse_final_choice(self, text: str) -> Optional[str]:
+        """
+        Parse the model's output and return 'A' or 'B' if found, else None.
+        Priority:
+          1) Explicit "FINAL: A/B" tag (last occurrence wins)
+          2) JSON-like {"final": "A"} or "final: B"
+          3) Legacy tokens {A}/{B}
+          4) Lone 'A' or 'B' on its own line
+        """
+        # 1) Explicit FINAL: X (prefer the last match)
+        matches = self._FINAL_TAG_RE.findall(text)
+        if matches:
+            return matches[-1].upper()
+
+        # 2) JSON-like or key-value "final"
+        kv = re.findall(r'"?final"?\s*[:=]\s*"?([AB])"?', text, flags=re.IGNORECASE)
+        if kv:
+            return kv[-1].upper()
+
+        # 3) Legacy brace tokens
+        last_a = text.rfind("{A}")
+        last_b = text.rfind("{B}")
+        if last_a != -1 or last_b != -1:
+            if last_a > last_b:
+                return "A"
+            elif last_b > last_a:
+                return "B"
+            # if only one exists, return that
+            if last_a != -1:
+                return "A"
+            if last_b != -1:
+                return "B"
+
+        # 4) Lone A/B on its own line (take the last occurrence)
+        lone = re.findall(r'^\s*([AB])\s*$', text, flags=re.IGNORECASE | re.MULTILINE)
+        if lone:
+            return lone[-1].upper()
+
+        return None
 
     def call_oracle(
         self,
@@ -247,11 +291,17 @@ class _OptimizedRemoteClient:
         stop: Optional[List[str]] = None,
         seed: Optional[int] = None,
     ) -> Tuple[str, str]:
-        """Returns (choice, raw_text) where choice is 'A' or 'B' (best-effort parse)."""
-        temperature = self.default_temperature if temperature is None else temperature
-        top_p = self.default_top_p if top_p is None else top_p
-        max_new_tokens = self.default_max_new_tokens if max_new_tokens is None else max_new_tokens
-        seed = self.default_seed if seed is None else seed
+        """
+        Returns (choice, raw_text) where choice is 'A' or 'B' (best-effort parse).
+        Now correctly handles outputs like:
+            FINAL: A
+            FINAL: B
+        plus legacy formats.
+        """
+        temperature = getattr(self, "default_temperature", 0.2) if temperature is None else temperature
+        top_p = getattr(self, "default_top_p", 0.95) if top_p is None else top_p
+        max_new_tokens = getattr(self, "default_max_new_tokens", 256) if max_new_tokens is None else max_new_tokens
+        seed = getattr(self, "default_seed", None) if seed is None else seed
 
         messages = [{"role": "user", "content": prompt}]
         text = self._post_chat(
@@ -264,13 +314,62 @@ class _OptimizedRemoteClient:
         )
         text = self._apply_stop(text.strip(), stop)
 
-        if text.endswith("}"):
-            for c in ("A", "B"):
-                if "{%s}" % c in text:
-                    return c, text
-        c = text[:1] if text and text[0] in "AB" else "A"
-        return c, text
+        choice = self._parse_final_choice(text)
+        if choice is None:
+            # Absolute last resort: keep your previous heuristic
+            # (first char if it's A/B; otherwise default to 'A')
+            if text and text[0] in ("A", "B"):
+                choice = text[0]
+            else:
+                choice = "A"
 
+        return choice, text
+    # Add this method to the _OptimizedRemoteClient class in remoteOss.py
+
+    def generate_response(
+        self,
+        prompt: str,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_new_tokens: Optional[int] = None,
+        stop: Optional[List[str]] = None,
+        seed: Optional[int] = None,
+    ) -> str:
+        """
+        Generate a response for a given prompt.
+        This method is compatible with ScheduleBatchExp's expectations.
+        
+        Args:
+            prompt: The prompt to send to the LLM
+            temperature: Sampling temperature
+            top_p: Top-p sampling parameter
+            max_new_tokens: Maximum tokens to generate
+            stop: Stop sequences
+            seed: Random seed for reproducibility
+        
+        Returns:
+            The raw text response from the model
+        """
+        temperature = self.default_temperature if temperature is None else temperature
+        top_p = self.default_top_p if top_p is None else top_p
+        max_new_tokens = self.default_max_new_tokens if max_new_tokens is None else max_new_tokens
+        seed = self.default_seed if seed is None else seed
+        
+        messages = [{"role": "user", "content": prompt}]
+        
+        text = self._post_chat(
+            messages,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_new_tokens,
+            seed=seed,
+            stop=stop,
+        )
+        
+        # Apply stop sequences if provided
+        text = self._apply_stop(text.strip(), stop)
+        
+        return text
 
 def get_local_client(
     model_id: str = DEFAULT_MODEL_ID,
