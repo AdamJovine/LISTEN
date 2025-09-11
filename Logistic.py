@@ -166,7 +166,8 @@ class LinearLogisticModel:
             
             # Weight by utility to prefer high-value comparisons
             score = entropy * (1 + u_challenger_mean)
-            
+        elif acquisition == "random":
+            score = self._rng.random()
         else:
             # Default: use posterior mean utility
             score = u_challenger_mean

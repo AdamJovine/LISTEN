@@ -17,7 +17,7 @@ from p1 import SimpleB2BPreferenceClient
 #from prompt import PromptTemplate, BoundedPromptTemplate 
 from prompt import BeautyPromptTemplateAdapter, SchedulePromptTemplateAdapter 
 from remoteOss import get_local_client
-batch_size = 32
+batch_size = 64
 # ------ CENTRAL CONFIG (edit these) ------
 CONFIG = {
     # I/O
