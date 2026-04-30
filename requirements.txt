@@ -1,0 +1,10 @@
+numpy
+pandas
+scipy
+scikit-learn
+matplotlib
+PyYAML
+google-generativeai
+google-genai
+groq
+pytest

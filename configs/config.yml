@@ -1,0 +1,248 @@
+log_dir: logs
+api_model: groq
+model_configs:
+  groq:
+    model_name: llama-3.3-70b-versatile
+    api_key_env: GROQ_API_KEY
+    max_output_tokens: 8192
+    rate_limit_delay: 0.1
+    temperature: 0.2
+    top_p: 0.95
+  gemini:
+    model_name: gemini-2.5-flash-lite
+    api_key_env: GEMINI_API_KEY
+    max_output_tokens: 8192
+    rate_limit_delay: 0.1
+    temperature: 0.2
+    top_p: 0.95
+use_utility_sim: false
+reasoning: false
+comparison_batch_size: 2
+tournament_batch_size: 50
+n_batches: 25
+
+prompts:
+  comparison_base:
+    strategy: round_robin
+    variants:
+      header_then_task_v1: |
+        {scenario_header}
+
+        Your task: Identify the SINGLE BEST {comparison_noun} from the options below.
+      header_then_task_v2: |
+        {scenario_header}
+
+        Your task: Select exactly ONE best {comparison_noun} from the options below.
+      header_then_task_v3: |
+        {scenario_header}
+
+        Your task: Choose the single best {comparison_noun} from the options below.
+      task_then_header_v1: |
+        Your task: Identify the SINGLE BEST {comparison_noun} from the options below.
+
+        Context:
+        {scenario_header}
+      task_then_header_v2: |
+        Your task: Select exactly ONE best {comparison_noun} from the options below.
+
+        Context:
+        {scenario_header}
+      task_then_header_v3: |
+        Your task: Choose the single best {comparison_noun} from the options below.
+
+        Context:
+        {scenario_header}
+      structured_sections_v1: |
+        Decision Objective:
+        Your task: Identify the SINGLE BEST {comparison_noun} from the options below.
+
+        Scenario:
+        {scenario_header}
+      structured_sections_v2: |
+        Decision Objective:
+        Your task: Select exactly ONE best {comparison_noun} from the options below.
+
+        Scenario:
+        {scenario_header}
+      structured_sections_v3: |
+        Decision Objective:
+        Your task: Choose the single best {comparison_noun} from the options below.
+
+        Scenario:
+        {scenario_header}
+
+  utility_base:
+    strategy: round_robin
+    variants:
+      header_then_task_v1: |
+        {scenario_header}
+
+        Your task: Define a utility function by assigning weights to these metrics, reflecting {utility_priorities}. {utility_task_body}
+
+        Return your response in this EXACT JSON format (include ALL listed metric keys):
+        {metric_weights_json}
+
+        STRICT OUTPUT RULES:
+        - Output ONLY a valid JSON object. No code fences. No prose. No Python.
+        {utility_weight_rule}
+        - Do not include any additional keys beyond weights, formula, description.
+        {utility_key_rule}
+        - End your output with the delimiter: <END_JSON>
+
+      header_then_task_v2: |
+        {scenario_header}
+
+        Your task: Assign numerical weights to each metric below to construct a utility function that captures {utility_priorities}. {utility_task_body}
+
+        Return your response in this EXACT JSON format (include ALL listed metric keys):
+        {metric_weights_json}
+
+        STRICT OUTPUT RULES:
+        - Output ONLY a valid JSON object. No code fences. No prose. No Python.
+        {utility_weight_rule}
+        - Do not include any additional keys beyond weights, formula, description.
+        {utility_key_rule}
+        - End your output with the delimiter: <END_JSON>
+
+      header_then_task_v3: |
+        {scenario_header}
+
+        Your task: Produce a weighted utility function over the metrics listed below, encoding {utility_priorities}. {utility_task_body}
+
+        Return your response in this EXACT JSON format (include ALL listed metric keys):
+        {metric_weights_json}
+
+        STRICT OUTPUT RULES:
+        - Output ONLY a valid JSON object. No code fences. No prose. No Python.
+        {utility_weight_rule}
+        - Do not include any additional keys beyond weights, formula, description.
+        {utility_key_rule}
+        - End your output with the delimiter: <END_JSON>
+
+      task_then_header_v1: |
+        Your task: Define a utility function by assigning weights to these metrics, reflecting {utility_priorities}. {utility_task_body}
+
+        Context:
+        {scenario_header}
+
+        Return your response in this EXACT JSON format (include ALL listed metric keys):
+        {metric_weights_json}
+
+        STRICT OUTPUT RULES:
+        - Output ONLY a valid JSON object. No code fences. No prose. No Python.
+        {utility_weight_rule}
+        - Do not include any additional keys beyond weights, formula, description.
+        {utility_key_rule}
+        - End your output with the delimiter: <END_JSON>
+
+      task_then_header_v2: |
+        Your task: Assign numerical weights to each metric below to construct a utility function that captures {utility_priorities}. {utility_task_body}
+
+        Context:
+        {scenario_header}
+
+        Return your response in this EXACT JSON format (include ALL listed metric keys):
+        {metric_weights_json}
+
+        STRICT OUTPUT RULES:
+        - Output ONLY a valid JSON object. No code fences. No prose. No Python.
+        {utility_weight_rule}
+        - Do not include any additional keys beyond weights, formula, description.
+        {utility_key_rule}
+        - End your output with the delimiter: <END_JSON>
+
+      task_then_header_v3: |
+        Your task: Produce a weighted utility function over the metrics listed below, encoding {utility_priorities}. {utility_task_body}
+
+        Context:
+        {scenario_header}
+
+        Return your response in this EXACT JSON format (include ALL listed metric keys):
+        {metric_weights_json}
+
+        STRICT OUTPUT RULES:
+        - Output ONLY a valid JSON object. No code fences. No prose. No Python.
+        {utility_weight_rule}
+        - Do not include any additional keys beyond weights, formula, description.
+        {utility_key_rule}
+        - End your output with the delimiter: <END_JSON>
+
+      structured_sections_v1: |
+        Weighting Objective:
+        Your task: Define a utility function by assigning weights to these metrics, reflecting {utility_priorities}. {utility_task_body}
+
+        Scenario:
+        {scenario_header}
+
+        Return your response in this EXACT JSON format (include ALL listed metric keys):
+        {metric_weights_json}
+
+        STRICT OUTPUT RULES:
+        - Output ONLY a valid JSON object. No code fences. No prose. No Python.
+        {utility_weight_rule}
+        - Do not include any additional keys beyond weights, formula, description.
+        {utility_key_rule}
+        - End your output with the delimiter: <END_JSON>
+
+      structured_sections_v2: |
+        Weighting Objective:
+        Your task: Assign numerical weights to each metric below to construct a utility function that captures {utility_priorities}. {utility_task_body}
+
+        Scenario:
+        {scenario_header}
+
+        Return your response in this EXACT JSON format (include ALL listed metric keys):
+        {metric_weights_json}
+
+        STRICT OUTPUT RULES:
+        - Output ONLY a valid JSON object. No code fences. No prose. No Python.
+        {utility_weight_rule}
+        - Do not include any additional keys beyond weights, formula, description.
+        {utility_key_rule}
+        - End your output with the delimiter: <END_JSON>
+
+      structured_sections_v3: |
+        Weighting Objective:
+        Your task: Produce a weighted utility function over the metrics listed below, encoding {utility_priorities}. {utility_task_body}
+
+        Scenario:
+        {scenario_header}
+
+        Return your response in this EXACT JSON format (include ALL listed metric keys):
+        {metric_weights_json}
+
+        STRICT OUTPUT RULES:
+        - Output ONLY a valid JSON object. No code fences. No prose. No Python.
+        {utility_weight_rule}
+        - Do not include any additional keys beyond weights, formula, description.
+        {utility_key_rule}
+        - End your output with the delimiter: <END_JSON>
+
+  utility_refinement: |
+    You are refining a utility function for {utility_domain} (iteration {iteration}).
+
+    CURRENT UTILITY FUNCTION (that produced the {best_item_ref} below):
+    Weights: {weights}
+    Formula: {formula}
+    Description: {description}
+
+    BEST {best_item_found} with the above utility function:
+    {best_solution}
+
+    ANALYSIS:
+    {analysis_questions}
+
+    Your task: Based on this {best_item_ref}, adjust the utility function weights if needed.
+    Consider:
+    {policy_guidance}
+
+    Return your response in this EXACT JSON format (include ALL listed metric keys):
+    {metric_weights_json_escaped}
+
+    STRICT OUTPUT RULES:
+    - Output ONLY a valid JSON object. No code fences. No prose. No Python.
+    {utility_weight_rule}
+    - Do not include any additional keys beyond weights, formula, description.
+    {utility_key_rule_refinement}
+    - If no change is needed, return the previous weights unchanged in the JSON.
+    - End your output with the delimiter: <END_JSON>

@@ -1,0 +1,6 @@
+scenario,mode,header then task LISTEN-T,header then task LISTEN-U,task then header LISTEN-T,task then header LISTEN-U
+Flights Ithaca->Reston,Complicated,0.052,0.009,0.008,0.008
+Flights CHI->NYC,Complicated_structured,0.437,0.385,0.398,0.310
+Headphones,STUDENT,0.178,0.055,,
+Headphones,STUDENT_HARD,0.077,0.623,0.108,0.623
+Exam Scheduling,REGISTRAR,0.496,0.326,0.476,0.389

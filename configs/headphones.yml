@@ -1,0 +1,334 @@
+tag: headphones
+
+data_csv: input/headphones_data.csv
+
+metric_columns:
+  - product_name
+  - brand
+  - price
+  - type
+  - connectivity
+  - noise_cancellation
+  - battery_life
+  - bluetooth_version
+  - driver_size
+  - weight
+  - water_resistance
+  - microphone
+  - review_rating
+  - review_count
+  - description
+
+metric_signs:
+  product_name: 0        
+  brand: 0               
+  price: -1              
+  type: 0                
+  connectivity: 0        
+  noise_cancellation: 0  
+  battery_life: 1        
+  bluetooth_version: 1   
+  driver_size: 0         
+  weight: 0       
+  water_resistance: 0    
+  microphone: 0          
+  review_rating: 1       
+  review_count: 1        
+  description: 0         
+
+non_numeric_metrics:
+  - product_name
+  - brand
+  - description
+
+prompt_vars:
+  comparison_noun: "pair of headphones"
+  utility_priorities: "priorities for audio quality, comfort, durability, and value"
+  utility_task_body: |
+    IMPORTANT:
+    - product_name and description are non-metrics; their weights must always be 0.
+    - Some metrics are monotonic (e.g., lower price, higher rating).
+    - Some metrics may have optimal mid-ranges (e.g., weight).
+    - Some are categorical and subjective (e.g., connectivity, type).
+    - Each metric is first mapped to a normalized [0,1] preference score. The final utility is:
+
+      utility = sum(weight_i * score_i) for all metrics
+  utility_domain: "headphone evaluation"
+  best_item_found: "HEADPHONE FOUND"
+  best_item_ref: "best choice"
+  analysis_questions: |
+    - Does this choice seem reasonable given the stated preferences?
+    - Are any metrics over- or under-weighted?
+    - Should any penalties or bonuses be adjusted?
+    - product_name and description weights must remain 0.
+  utility_weight_rule: |
+    - product_name and description weights must remain 0.0 always.
+    - For all other metrics, weights may be positive or negative. Use positive weights where higher is better and negative weights where lower is better
+  utility_key_rule: ""
+
+prompts:
+  scenario_header: |
+    You are an audio equipment reviewer choosing the best headphones.
+    Use these definitions:
+    - product_name: name of the product (non-metric, weight always 0).
+    - brand: manufacturer reputaton (non-metric, weight always 0).
+    - price: cost measured in dollars.
+    - type: headphone design.
+    - connectivity: wired vs wireless.
+    - noise_cancellation: active vs passive.
+    - battery_life: measured in hours.
+    - bluetooth_version: higher versions are newer.
+    - driver_size: measured in millimeters.
+    - weight: measured in ounces.
+    - water_resistance: measured subjectively and also through the ipXX rating system, which measures a device's protection against solids (first digit) and liquids (second digit), with higher numbers indicating stronger resistance.
+    - microphone: presence/quality of mic
+    - review_rating: average customer rating
+    - review_count: number of reviews
+    - description: qualitative marketing text (non-metric, weight always 0)
+    Also, the data in the data_csv is numerical except in the columns product_name, brand, and description). However, for some of the columns in which there is
+    numerical data, there was originally non-numerical data. We dealt with this by creating a mapping from numbers to data.
+    For example, in brand, we mapped all unique brands to numbers which show up in the table.
+    Our mapping is below:
+        TYPE MAPPING:
+      ==================================================
+      1: Gaming
+      2: In-Ear
+      3: Neckband
+      4: On-Ear
+      5: Open-Ear
+      6: Over-Ear
+      7: Sport
+      8: True Wireless
+      BRAND MAPPING:
+      ==================================================
+      1: AMORNO
+      2: Apple
+      3: Audio-Technica
+      4: BERIBES
+      5: BHNYBWUL
+      6: Beats
+      7: Beyerdynamic
+      8: Bose
+      9: Bowers & Wilkins
+      10: EAORUL
+      11: EarFun
+      12: INFURTURE
+      13: JBL
+      14: JLab
+      15: KVIDIO
+      16: LORELEI
+      17: Marshall
+      18: OneOdio
+      19: PHILIPS
+      20: Picun
+      21: RUNOLIM
+      22: SHOKZ
+      23: Sennheiser
+      24: Sony
+      25: Soundcore
+      26: TOZO
+      27: YY KATTY
+      28: ZIHNIC
+      29: beyerdynamic
+      30: iClever
+      31: kurdene
+      32: noot products
+      CONNECTIVITY MAPPING:
+      ==================================================
+      1: Wired
+      2: Wireless
+      NOISE_CANCELLATION MAPPING:
+      ==================================================
+      1: Active
+      2: Passive
+      WATER_RESISTANCE MAPPING:
+      ==================================================
+      1: ip54
+      2: ip55
+      3: ipx5
+      4: ipx7
+      5: not water resistant
+      6: water & dust resistant
+      7: water resistant
+      8: water-resistant
+      9: waterproof
+      MICROPHONE MAPPING:
+      ==================================================
+      1: No
+      2: Yes
+    These mappings are not ordered. For example, for water_resistance mapping, water-resistant is not strictly better than ip54.
+    It is up to you to use these mappings to convert random categorial numerical data (for columns where mappings exist)
+    into useful non-numerical qualitative information about each product. There should be no comparisons between options if you have not converted numbers
+    from columns where mappings exist into qualitative data, because otherwise the comparisons would essentially be between random numbers.
+
+# Modes for headphone scenario
+default_mode: STUDENT_HARD
+
+modes:
+  BASE:
+    prompt: >
+
+  PRICE:
+    prompt: >
+      Prioritize minimizing price. This is the most important metric.
+    weights:
+      product_name: 0
+      brand: 0
+      price: -4.506460
+      type: 0.000000
+      connectivity: 0.000000
+      noise_cancellation: 0.000000
+      battery_life: 0.000000
+      bluetooth_version: 0.000000
+      driver_size: 0.000000
+      weight: 0.000000
+      water_resistance: 0.000000
+      microphone: 0.000000
+      review_rating: 0.037758
+      review_count: 0.002802
+      description: 0
+    human_sol: [55, 33, 44, 43, 75, 25, 58, 36, 26, 35]
+
+  REVIEW:
+    prompt: >
+      The most important priority is maximizing review_rating. The second priority is maximizing review_count. The third priority is minimizing price. Other metrics matter less.
+    weights:
+      product_name: 0
+      brand: 0
+      price: -0.396549
+      type: 0.000000
+      connectivity: 0.000000
+      noise_cancellation: 0.000000
+      battery_life: 0.000000
+      bluetooth_version: 0.000000
+      driver_size: 0.000000
+      weight: 0.000000
+      water_resistance: 0.000000
+      microphone: 0.000000
+      review_rating: 1.363325
+      review_count: 0.354650
+      description: 0
+    human_sol: [10, 29, 22, 4, 9, 69, 11, 65, 26, 32]
+
+  STUDENT:
+    prompt: >
+      Objective:
+          I am a college student who is looking for recommendations for new headphones. 
+  
+          I prefer over-ear headphones rather than in-ear or on-ear, since they feel more comfortable for long hours and usually deliver better sound. 
+          I also prefer wireless headphones because I don’t want to deal with cables. 
+          I would like the headphones to have active noise cancellation, since I often study in places where there is background noise. 
+          A microphone is important to me because I sometimes use my headphones for calls.
+          
+          For battery life, I’d like headphones that can last a long time on a single charge. 
+          I usually don’t mind recharging overnight, but I don’t want headphones that run out of power quickly in the middle of the day.
+          
+          In terms of build, I actually prefer headphones that feel a bit heavier, since lightweight headphones sometimes feel cheap or less durable to me.
+          When I look at reviews, I prefer headphones with both a high rating and a large number of reviews, since that gives me more confidence in the product.
+          I would prefer headphones which have at least 5,000 reviews and a rating of at least 4.4.
+          To clarify the relative importance of both rating and number of reviews, I would rather pick headphones with 
+          a 4.8 rating and 20,000 reviews than a 4.9 rating with 1000 reviews. 
+          
+          Other metrics such as driver size, water resistance, and Bluetooth version do not matter at all to me.
+          I’m not price-sensitive at all, so I’m willing to pay more if the headphones meet my preferences well.
+
+    weights:
+      product_name: 0.0
+      brand: 0.0
+      price: -0.3150
+      type: 0.0
+      connectivity: 0.0
+      noise_cancellation: 0.0
+      battery_life: 0.5806
+      bluetooth_version: 0.0
+      driver_size: 0.7252
+      weight: 0.8642
+      water_resistance: 0.0
+      microphone: 0.0
+      review_rating: 3.2887
+      review_count: 0.6012
+      description: 0.0
+    human_sol: [23, 2, 56, 29, 66, 24, 1, 15, 30, 4, 20, 10, 46, 74, 12]
+
+  STUDENT_GOLDILOCK:
+    prompt: >
+      Objective:
+          I am a college student who is looking for recommendations for new headphones.
+
+          I prefer over-ear headphones rather than in-ear or on-ear, since they feel more comfortable for long hours and usually deliver better sound.
+          I also prefer wireless headphones because I don't want to deal with cables.
+          I would like the headphones to have active noise cancellation, since I often study in places where there is background noise.
+          A microphone is important to me because I sometimes use my headphones for calls.
+
+          For battery life, I'd like headphones that can last a long time on a single charge.
+          I usually don't mind recharging overnight, but I don't want headphones that run out of power quickly in the middle of the day.
+
+          In terms of build, I prefer headphones that don't weigh too much or too little, because very light headphones sometimes
+          feel cheap or less durable to me. However, very heavy headphones are hard to wear for several hours without causing head or neck strain.
+          When I look at reviews, I prefer headphones with both a high rating and a large number of reviews, since that gives me more confidence in the product.
+          I would prefer headphones which have at least 5,000 reviews and a rating of at least 4.4.
+          To clarify the relative importance of both rating and number of reviews, I would rather pick headphones with
+          a 4.8 rating and 20,000 reviews than a 4.9 rating with 1000 reviews.
+
+          Other metrics such as driver size, water resistance, and Bluetooth version do not matter at all to me.
+          I'm not price-sensitive at all, so I'm willing to pay more if the headphones meet my preferences well.
+    weights:
+      product_name: 0.0
+      brand: 0.0
+      price: -0.01
+      type: 0.0
+      connectivity: 0.0
+      noise_cancellation: 0.0
+      battery_life: 0.2939
+      bluetooth_version: 0.0
+      driver_size: 0.01
+      weight: 0.3480
+      water_resistance: 0.0
+      microphone: 0.0
+      review_rating: 0.1481
+      review_count: 0.3178
+      description: 0.0
+    human_sol: [29,30,2,24,4,23,10,22,11,65,12,13,62,15,66]
+
+  STUDENT_HARD:
+    prompt: >
+      Objective:
+          I am seeking recommendations for premium wireless over-ear headphones designed for both long study sessions and high-quality music listening. The ideal options should balance advanced features, comfort, and practicality to support a student lifestyle.
+      
+      Primary Requirements (Must-Haves):
+        HARD CONSTRAINTS:
+          - type MUST BE 6 (Over-Ear)
+          - connectivity MUST BE 2 (Wireless)
+          - noise_cancellation MUST BE 1 (Active)
+          - microphone MUST BE 2 (Yes)
+          - battery_life MUST BE >= 30 hours
+        Type: Wireless, over-ear headphones (not earbuds).
+        Core Features: Active Noise Cancellation (ANC) and a built-in microphone.
+        Battery Life: Minimum 30 hours of playback per charge to ensure multi-day use without nightly recharging.
+        Comfort & Weight: A balanced design—substantial enough to feel durable and premium, yet light enough for several hours of wear without causing head or neck strain.
+        Brand: At least one recommendation must feature a Sennheiser model.
+        User Reviews: Preference for models with both a high average rating and a large number of reviews, signaling broad user satisfaction.
+    
+      Secondary Criteria (Nice to Have):
+        Product Information: Descriptions should highlight either superior sound quality or exceptional long-wear comfort.
+        Price: When two or more options meet all requirements equally, the more affordable option is preferred.
+        Battery Life: Minimum 30 hours of playback per charge to ensure multi-day use without nightly recharging. 
+    weights:
+      product_name: 0.0
+      brand: 0.0
+      price: -0.1220
+      type: 0.0
+      connectivity: 0.0
+      noise_cancellation: 0.0
+      battery_life: 0.1864
+      bluetooth_version: 0.0
+      driver_size: 0.1273
+      weight: 0.0957
+      water_resistance: 0.0
+      microphone: 0.0
+      review_rating: 2.0425
+      review_count: -0.2017
+      description: 0.0
+
+      
+    human_sol: [4,22,1,2,74,42,15,46, 21, 18,0,5,3,20,14]

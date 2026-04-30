@@ -1,0 +1,192 @@
+tag: flight00
+data_csv: input/Chicago_New York City_combined_numeric_filtered.csv
+metric_columns:
+  - name
+  - origin
+  - destination
+  - departure time
+  - arrival time
+  - duration
+  - stops
+  - price
+  - dis_from_origin
+  - dis_from_dest
+  - departure_seconds
+  - arrival_seconds
+  - duration_min
+
+metric_signs:
+  name: 0
+  origin: 0
+  destination: 0
+  departure time: 0
+  arrival time: 0
+  duration: 0
+  stops: -1
+  price: -1
+  dis_from_origin: -1
+  dis_from_dest: -1
+  departure_seconds: -1
+  arrival_seconds: 0
+  duration_min: -1
+
+non_numeric_metrics:
+  - name
+  - origin
+  - destination
+  - departure time
+  - arrival time
+  - duration
+
+prompt_vars:
+  comparison_noun: flight
+  utility_priorities: "priorities for customer satisfaction"
+  utility_domain: "flight itinerary selection"
+  best_item_found: "FLIGHT FOUND"
+  best_item_ref: "best flight"
+  analysis_questions: |
+    - Does the flight align with the desired time?
+    - Does the flight chosen factor in cost based on customer desire?
+    - Is this the most optimal flight?
+
+prompts:
+  scenario_header: |
+    You are an expert travel scheduling agent that specializes in air fare.
+    The data set is only for a one-way flight. In this case, it is the first leg of a round trip.
+    Use these definitions:
+    • name: name of airline operating the flight
+    • origin: origin airport
+    • destination: destination airport
+    • departure time: time of departure from origin airport
+    • arrival time: time of arrival at destination airport
+    • duration: how long the flight is
+    • stops: number of layover stops
+    • price: cost of the flight
+    • dis_from_origin: distance of origin airport from where the customer prefers (lower is better)
+    • dis_from_dest: distance of arrival airport from where the customer prefers (lower is better)
+    • departure_seconds: time of departure since a fixed date in seconds
+    • arrival_seconds: time of arrival since a fixed date in seconds
+    • duration_min: duration of total flight in minutes (lower is better)
+
+# Modes for flight00 scenario
+default_mode: Complicated_structured
+modes:
+  Cost:
+    prompt: >
+      Make sure to prioritize minimizing the cost of the flight. This is the most important metric.
+    weights:
+      stops: 0
+      price: -1
+      dis_from_origin: 0
+      dis_from_dest: 0
+      departure_seconds: 0
+      arrival_seconds: 0
+      duration_min: 0
+  HEIGH:
+    prompt: >
+      Your first priority is to minimize cost, then the second priority is to minimize stops then finally maximize the amount of time in the destination.
+    weights:
+      stops: -2
+      price: -3
+      dis_from_origin: 0
+      dis_from_dest: 0
+      departure_seconds: -1
+      arrival_seconds: 0
+      duration_min: 0
+  Minimize distance:
+    prompt: >
+      Minimize the distance the customer has to travel to and from the airport.
+    weights:
+      stops: 0
+      price: 0
+      dis_from_origin: -1
+      dis_from_dest: -1
+      departure_seconds: 0
+      arrival_seconds: 0
+      duration_min: 0
+  BASE:
+    prompt: >
+
+    weights:
+      stops: -10
+      price: -8
+      dis_from_origin: -3
+      dis_from_dest: -3
+      departure_seconds: 0
+      arrival_seconds: 0
+      duration_min: -5
+  Complicated:
+    prompt: >
+      I would like to take a trip from Chicago to New York City with my brother the weekend of October 11, 2025. I have two classes on the Friday of that weekend (October 10).
+      My first class is from 10:30 to 12:30, and this is an unmissable class. The second class is from 1:30 to 3:30. I would prefer not to miss this class, but I can swing it if need be.
+      Time is of the essence, so I prefer to maximize my time in NYC. I will be visiting friends in NYC, so I can fly into any of the three major airports. The transportation from EWR to my friend's place is the longest, but I only have a slight preference against it.
+      I do not feel the need to strictly minimize cost; however, I would prefer to keep this flight below 400 dollars. Obviously, if different flights meet my requirements, I prefer the cheaper one.
+      I can fly in either Friday (October 10) or Saturday (October 11). If I fly in on Friday, I prefer to fly in early enough to get a good night of sleep or to catch the last train leaving at 11 PM. If I must fly in on Saturday, I would like a flight as early as possible. I prefer a direct flight. I have no preference for airline.
+    weights:
+      stops: 0.084996
+      price: -1.500579
+      dis_from_origin: 0.280001
+      dis_from_dest: -0.069354
+      departure_seconds: 0.518394
+      arrival_seconds: -1.261170
+    human_sol: [593, 685, 602, 612, 692, 603, 617, 481, 1, 276, 138, 5, 426, 285, 271, 7]
+  Complicated_structured:
+    prompt: >
+      Objective:
+        I am looking for round-trip flight options for two adults from Chicago to New York City for the weekend of October 11, 2025. The priority is to maximize our time in NYC while respecting a key scheduling constraint on Friday.
+
+      Primary Requirements (Must-Haves):
+        - Route: Chicago (any airport) to New York City (JFK, LGA, or EWR).
+        - Passengers: 2 adults.
+        - Departure Window:
+          - Must depart on either Friday, October 10, 2025, or Saturday, October 11, 2025.
+          - If departing on Friday, the flight must be after 12:30 PM.
+        - Return Date: Sunday, October 12, 2025.
+        - Budget: The total price per ticket must not exceed $400.
+
+      Secondary Preferences (Tie-Breakers):
+        - These should be used to select the best option among flights that meet the above requirements.
+        - Departure Time (Friday): A departure after 3:30 PM is strongly preferred. The ideal arrival would be early enough to get a full night's sleep or to catch an 11:00 PM train from the airport.
+        - Departure Time (Saturday): If a Saturday departure is chosen, it should be the earliest possible flight to maximize time in the city.
+        - Flight Type: Direct (non-stop) flights are highly preferred.
+        - Cost: Among flights that meet all criteria, the cheapest option is best.
+        - Destination Airport: There is a slight preference against Newark (EWR) due to longer ground transportation, but it is an acceptable option.
+        - Airline: No airline preference.
+
+    weights:
+      stops: 0.077401
+      price: -1.131886
+      dis_from_origin: 0.173801
+      dis_from_dest: -0.131815
+      departure_seconds: 1.044421
+      arrival_seconds: -1.785523
+    human_sol: [593, 685, 602, 612, 692, 603, 617, 481, 1, 276, 138, 5, 426, 285, 271, 7]
+  Complicated_structured_no_hard:
+    prompt: >
+      Objective:
+        I am looking for round-trip flight options for two adults from Chicago to New York City for the weekend of October 11, 2025. The priority is to maximize our time in NYC while respecting a key scheduling constraint on Friday.
+
+      Preferences:
+        - Route: Chicago (ORD or MDW) to New York City (JFK, LGA, or EWR).
+        - Depart on either Friday, October 10, 2025, or Saturday, October 11, 2025.
+        - Departure Time (Friday): If departure is on Friday, I prefer for it to be after 12:30 PM. I most prefer a departure after 3:30 PM. The ideal arrival would be early enough to get a full night's sleep or to catch an 11:00 PM train from the airport.
+        - Departure Time (Saturday): If a Saturday departure is chosen, I prefer it to be the earliest possible flight to maximize time in the city.
+        - Flight Type: Direct (non-stop) flights are highly preferred.
+        - Cost: Among flights that meet all criteria, the cheapest option is best.
+        - Destination Airport: There is a slight preference against Newark (EWR) due to longer ground transportation, but it is an acceptable option.
+        - Airline: No airline preference.
+        - Budget: I prefer to keep the total price per ticket under $400.
+
+    weights:
+      stops: 0.225633
+      price: -1.640661
+      dis_from_origin: 0.267398
+      dis_from_dest: -0.114943
+      departure_seconds: 0.628372
+      arrival_seconds: -1.286268
+    human_sol: [593, 685, 602, 612, 692, 603, 617, 481, 1, 276, 138, 5, 477, 426, 285, 271, 7, 686, 609, 471]
+
+
+
+
+
