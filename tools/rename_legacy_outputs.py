@@ -76,7 +76,8 @@ def rewrite_payload(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
         meta["mode"] = new_mode
         changed = True
 
-    # Mirror into meta.config.{tag, scenario, mode} if present.
+    # Mirror into meta.config.{tag, scenario, mode, default_mode} and rename
+    # any matching keys inside meta.config.modes (the snapshotted modes dict).
     cfg = meta.get("config")
     if isinstance(cfg, dict):
         if _rename_scenario(cfg.get("tag")) != cfg.get("tag"):
@@ -91,6 +92,24 @@ def rewrite_payload(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
         ):
             cfg["mode"] = _rename_mode_for_headphones(new_scenario, cfg.get("mode"))
             changed = True
+        if (
+            cfg.get("default_mode") is not None
+            and _rename_mode_for_headphones(new_scenario, cfg.get("default_mode")) != cfg.get("default_mode")
+        ):
+            cfg["default_mode"] = _rename_mode_for_headphones(new_scenario, cfg.get("default_mode"))
+            changed = True
+        modes = cfg.get("modes")
+        if isinstance(modes, dict) and new_scenario == "headphones":
+            renamed = {}
+            keys_changed = False
+            for k, v in modes.items():
+                new_k = HEADPHONES_MODE_RENAMES.get(k, k)
+                if new_k != k:
+                    keys_changed = True
+                renamed[new_k] = v
+            if keys_changed:
+                cfg["modes"] = renamed
+                changed = True
 
     return payload, changed
 

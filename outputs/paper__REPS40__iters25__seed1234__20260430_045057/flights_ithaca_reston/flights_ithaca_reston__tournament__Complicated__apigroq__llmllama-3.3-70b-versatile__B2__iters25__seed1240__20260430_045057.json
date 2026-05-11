@@ -179,8 +179,7 @@
       "git_dirty": true,
       "git_dirty_files": [
         "M scripts/paper_recreate.sh"
-      ],
-      "git_diff": "diff --git a/scripts/paper_recreate.sh b/scripts/paper_recreate.sh\nindex 9d986d8c1..101d1ff6f 100755\n--- a/scripts/paper_recreate.sh\n+++ b/scripts/paper_recreate.sh\n@@ -50,7 +50,7 @@ SWEEP_BATCH_SIZES=(2 4 8 16 32)\n ORDER_BATCH_SIZE=32\n BASE_BATCH_SIZE=32\n \n-API_MODELS=(\"groq\" \"gemini\")\n+API_MODELS=(\"groq\" )\n \n CANONICAL_PAIRS=(\n   \"flight02:Complicated\"\n"
+      ]
     }
   },
   "results": {
