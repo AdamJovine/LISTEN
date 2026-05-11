@@ -130,8 +130,9 @@ def test_get_rank_uses_registrar_human_sol():
     assert algo.get_rank(expected[-1]) == len(expected)
 
 
-def test_get_rank_defaults_when_human_sol_missing_for_exam_b2b():
-    algo, human_sol = _build_algo_for_mode("exam", "B2B")
+def test_get_rank_defaults_when_human_sol_missing():
+    # BASE mode has no human_sol; verify rank fallback to (1 + N) / 2.
+    algo, human_sol = _build_algo_for_mode("exam", "BASE")
 
     assert human_sol == []
     assert algo.human_sol == []

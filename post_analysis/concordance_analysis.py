@@ -143,8 +143,11 @@ def analyze_all_scenarios(
     n_samples: int = 10000,
     random_seed: Optional[int] = None,
 ) -> pd.DataFrame:
-    if random_seed is not None:
-        np.random.seed(random_seed)
+    # NOTE: each (scenario, mode) re-seeds its own PRNG so per-pair results
+    # depend only on the pair's data + the global seed, not on iteration order
+    # or what other modes happen to exist in the config. This makes the in-
+    # process sweep deterministic under config edits (matches the per-pair
+    # runner script).
 
     if scenarios is None:
         cfg_dir = REPO_ROOT / "configs"
@@ -168,7 +171,7 @@ def analyze_all_scenarios(
 
             if has_human_sol:
                 print(f"Analyzing {scenario}-{mode_name}...")
-                mean, se = measure_concordance(scenario, mode_name, n_samples, None)
+                mean, se = measure_concordance(scenario, mode_name, n_samples, random_seed)
             else:
                 print(f"Skipping {scenario}-{mode_name} (no human_sol)")
                 mean = float("nan")
