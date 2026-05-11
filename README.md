@@ -210,9 +210,6 @@ If you use this code, please cite the paper:
 }
 ```
 
-A machine-readable [`CITATION.cff`](CITATION.cff) is also provided; GitHub
-renders it as a "Cite this repository" button on the repo page.
-
 ## 10) License
 
 [MIT](LICENSE).
