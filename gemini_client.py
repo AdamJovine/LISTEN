@@ -45,7 +45,6 @@ class GeminiPreferenceClient(BaseLLMClient):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY (or api_key) is required")
-        print(f"[GeminiPreferenceClient] Using apikey: {self.api_key}")
 
         self.enable_logprobs = enable_logprobs
         self.logprobs_k = logprobs_k
