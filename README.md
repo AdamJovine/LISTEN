@@ -219,7 +219,7 @@ If you use this code, please cite the paper:
 ```bibtex
 @article{jovine2025listen,
   title={LISTEN to Your Preferences: An LLM Framework for Multi-Objective Selection},
-  author={Jovine, Adam S and Ye, Tinghan and Bahk, Francis and Wang, Jingjing and Shmoys, David B and Frazier, Peter I},
+  author={Jovine, Adam S and Ye, Tinghan and Bahk, Francis and Wang, Jingjing and Ford, Matthew and Shmoys, David B and Frazier, Peter I},
   journal={arXiv preprint arXiv:2510.25799},
   year={2025}
 }
