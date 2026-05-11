@@ -13,12 +13,14 @@ import yaml
 
 from baseline_algorithm import BaselineExperiment
 from full_batch_algorithm import FullBatchExperiment
-from gemini_client import GeminiPreferenceClient
-from groq_client import FreeLLMPreferenceClient
 from prompt_tournament import ComparisonPromptAdapter
 from prompt_utility import UtilityPromptTemplate
 from tournament_algorithm import TournamentExperiment
 from utility_algorithm import UtilityExperiment
+
+# LLM client modules are imported lazily inside create_client() so that
+# importing this module (e.g. from tests) does not require the SDKs to be
+# installed.
 
 REPO_ROOT = Path(__file__).resolve().parent
 
@@ -411,6 +413,8 @@ def _build_utility_prompt_template(config: Dict[str, Any]) -> UtilityPromptTempl
 def create_client(api_model: str, model_configs: dict):
     mc = dict(model_configs.get(api_model) or {})
     if api_model == "groq":
+        from groq_client import FreeLLMPreferenceClient
+
         return FreeLLMPreferenceClient(
             provider="groq",
             api_key=mc.get("api_key") or os.getenv(mc.get("api_key_env", "GROQ_API_KEY")),
@@ -421,6 +425,8 @@ def create_client(api_model: str, model_configs: dict):
             default_seed=mc.get("seed"),
         )
     if api_model == "gemini":
+        from gemini_client import GeminiPreferenceClient
+
         api_key = mc.get("api_key") or os.getenv(mc.get("api_key_env", "GEMINI_API_KEY")) or os.getenv("GOOGLE_API_KEY")
         if not api_key:
             raise ValueError("Gemini API key not found. Set GEMINI_API_KEY/GOOGLE_API_KEY or model_configs.gemini.api_key.")
