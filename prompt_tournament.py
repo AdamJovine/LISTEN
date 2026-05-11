@@ -32,7 +32,7 @@ class ComparisonPromptTemplate(PromptTemplateInterface):
     Subclasses must still implement format() and get_base_prompt().
     """
 
-    MAX_HISTORY = 5  # Default max history items #TODO: make this a parameter
+    MAX_HISTORY = 5  # Class-level default; subclasses may override.
 
     def __init__(self, reasoning: bool = True, reasoning_history: bool = False, **kwargs):
         """
