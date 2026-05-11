@@ -38,8 +38,10 @@ prompt_vars:
     - Should any penalties be increased or decreased?
 
 prompts:
-  scenario_header: |
+  persona_context: |
     You are an expert university registrar choosing the best final-exam schedule.
+
+  attribute_definitions: |
     Use these definitions (lower is better unless stated otherwise):
     • conflicts: 2 exams at the same time (requires makeup)
     • quints: 5 in a row (requires makeup)

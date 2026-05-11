@@ -120,6 +120,16 @@ def parse_args() -> argparse.Namespace:
         help="Seed used for random utility prompt variant selection.",
     )
     ap.add_argument(
+        "--section-order",
+        dest="section_order",
+        help=(
+            "Comma-separated order of the persona/attributes/priorities sections "
+            "in the base prompt (e.g. 'priorities,attributes,persona'). Must be a "
+            "permutation of persona,attributes,priorities. The task line always "
+            "follows the three sections."
+        ),
+    )
+    ap.add_argument(
         "--output-root",
         help="Directory to place output files. Default: outputs/<scenario>.",
     )
@@ -174,6 +184,14 @@ def apply_overrides(cfg: Dict[str, Any], args: argparse.Namespace) -> None:
             cfg["utility_prompt_variant_override"] = variant_raw
     if args.utility_prompt_seed is not None:
         cfg["utility_prompt_seed_override"] = args.utility_prompt_seed
+    if args.section_order:
+        valid_sections = {"persona", "attributes", "priorities"}
+        order = [s.strip().lower() for s in args.section_order.split(",") if s.strip()]
+        if set(order) != valid_sections or len(order) != len(valid_sections):
+            raise ValueError(
+                f"--section-order must be a permutation of {sorted(valid_sections)}; got {order}"
+            )
+        cfg["section_order"] = order
     cfg["reasoning"] = bool(args.reasoning)
     cfg["use_history"] = bool(args.use_history)
     if args.temperature is not None:
@@ -244,6 +262,15 @@ def load_config(scenario: str) -> dict:
     for req in ["metric_columns", "data_csv", "tag"]:
         if req not in cfg:
             raise ValueError(f"Scenario config missing '{req}'")
+
+    prompts = cfg.get("prompts", {})
+    if not prompts.get("scenario_header"):
+        persona = (prompts.get("persona_context") or "").strip()
+        attrs = (prompts.get("attribute_definitions") or "").strip()
+        parts = [p for p in (persona, attrs) if p]
+        if parts:
+            prompts["scenario_header"] = "\n\n".join(parts) + "\n"
+            cfg["prompts"] = prompts
     return cfg
 
 
@@ -283,8 +310,27 @@ def _render_base_prompt_text(
     scenario_header: str,
     policy_guidance: str = "",
     prompt_vars: Optional[Dict[str, Any]] = None,
+    persona_context: str = "",
+    attribute_definitions: str = "",
+    section_order: Optional[list] = None,
 ) -> str:
     from prompt_utility import _apply_prompt_vars
+
+    if section_order:
+        sections = {
+            "persona": persona_context,
+            "attributes": attribute_definitions,
+            "priorities": policy_guidance,
+        }
+        ordered_parts = [
+            (sections.get(name) or "").strip()
+            for name in section_order
+            if (sections.get(name) or "").strip()
+        ]
+        ordered_block = "\n\n".join(ordered_parts)
+        rendered = template.replace("{scenario_header}", ordered_block)
+        rendered = _apply_prompt_vars(rendered, prompt_vars or {})
+        return rendered
 
     rendered = template.replace("{scenario_header}", scenario_header)
     rendered = _apply_prompt_vars(rendered, prompt_vars or {})
@@ -298,16 +344,27 @@ def _render_comparison_prompt_config(
     scenario_header: str,
     policy_guidance: str = "",
     prompt_vars: Optional[Dict[str, Any]] = None,
+    persona_context: str = "",
+    attribute_definitions: str = "",
+    section_order: Optional[list] = None,
 ) -> Any:
     """Render comparison prompt config while preserving shape (str/list/dict)."""
+    def _render(tpl: str) -> str:
+        return _render_base_prompt_text(
+            tpl,
+            scenario_header,
+            policy_guidance,
+            prompt_vars,
+            persona_context=persona_context,
+            attribute_definitions=attribute_definitions,
+            section_order=section_order,
+        )
+
     if isinstance(comparison_template, str):
-        return _render_base_prompt_text(comparison_template, scenario_header, policy_guidance, prompt_vars)
+        return _render(comparison_template)
 
     if isinstance(comparison_template, list):
-        return [
-            _render_base_prompt_text(str(tpl), scenario_header, policy_guidance, prompt_vars)
-            for tpl in comparison_template
-        ]
+        return [_render(str(tpl)) for tpl in comparison_template]
 
     if isinstance(comparison_template, dict):
         rendered_cfg = dict(comparison_template)
@@ -315,7 +372,7 @@ def _render_comparison_prompt_config(
 
         if variants is None:
             bare_mapping = {
-                k: _render_base_prompt_text(str(v), scenario_header, policy_guidance, prompt_vars)
+                k: _render(str(v))
                 for k, v in comparison_template.items()
                 if k not in {"strategy", "mode", "default_variant", "seed"}
             }
@@ -325,8 +382,7 @@ def _render_comparison_prompt_config(
 
         if isinstance(variants, dict):
             rendered_cfg["variants"] = {
-                name: _render_base_prompt_text(str(tpl), scenario_header, policy_guidance, prompt_vars)
-                for name, tpl in variants.items()
+                name: _render(str(tpl)) for name, tpl in variants.items()
             }
             return rendered_cfg
 
@@ -337,17 +393,10 @@ def _render_comparison_prompt_config(
                     entry_copy = dict(entry)
                     if "template" not in entry_copy:
                         raise ValueError("Each dict entry in prompts.comparison_base.variants must include 'template'.")
-                    entry_copy["template"] = _render_base_prompt_text(
-                        str(entry_copy["template"]),
-                        scenario_header,
-                        policy_guidance,
-                        prompt_vars,
-                    )
+                    entry_copy["template"] = _render(str(entry_copy["template"]))
                     rendered_variants.append(entry_copy)
                 else:
-                    rendered_variants.append(
-                        _render_base_prompt_text(str(entry), scenario_header, policy_guidance, prompt_vars)
-                    )
+                    rendered_variants.append(_render(str(entry)))
             rendered_cfg["variants"] = rendered_variants
             return rendered_cfg
 
@@ -360,8 +409,11 @@ def _build_comparison_prompt_template(config: Dict[str, Any]) -> ComparisonPromp
     """Build a ComparisonPromptAdapter from config (used by tournament, full_batch)."""
     prompts_config = config.get("prompts", {})
     scenario_header = prompts_config.get("scenario_header", "")
+    persona_context = prompts_config.get("persona_context", "")
+    attribute_definitions = prompts_config.get("attribute_definitions", "")
     comparison_template = prompts_config.get("comparison_base", "{scenario_header}")
     policy_guidance = config.get("utility_prompt_text", "")
+    section_order = config.get("section_order")
 
     strategy_override = config.get("comparison_prompt_strategy_override")
     variant_override = config.get("comparison_prompt_variant_override")
@@ -381,6 +433,9 @@ def _build_comparison_prompt_template(config: Dict[str, Any]) -> ComparisonPromp
         scenario_header=scenario_header,
         policy_guidance=policy_guidance,
         prompt_vars=config.get("prompt_vars", {}),
+        persona_context=persona_context,
+        attribute_definitions=attribute_definitions,
+        section_order=section_order,
     )
 
     return ComparisonPromptAdapter(
@@ -419,6 +474,7 @@ def _build_utility_prompt_template(config: Dict[str, Any]) -> UtilityPromptTempl
         policy_guidance=config.get("utility_prompt_text", ""),
         prompt_variant_strategy=strategy_override,
         prompt_variant_seed=variant_seed_override,
+        section_order=config.get("section_order"),
     )
 
 
