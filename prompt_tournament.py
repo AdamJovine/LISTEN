@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 
-from promptTemplate import PromptTemplateInterface, normalize_prompt_variant_config, PromptVariantMixin
+from prompt_template import PromptTemplateInterface, normalize_prompt_variant_config, PromptVariantMixin
 
 
 def _excel_column_label(n: int) -> str:

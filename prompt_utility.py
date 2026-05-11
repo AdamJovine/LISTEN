@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional, Union, List
 import json
 import re
 
-from promptTemplate import PromptTemplateInterface, PromptVariantMixin
+from prompt_template import PromptTemplateInterface, PromptVariantMixin
 
 
 _PROMPT_VAR_DEFAULTS: dict = {
