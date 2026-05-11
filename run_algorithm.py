@@ -495,7 +495,8 @@ def main():
     numeric_metric_columns = [c for c in config["metric_columns"] if c not in non_numeric]
     df = pd.read_csv(data_path).dropna(subset=numeric_metric_columns)
 
-    client = create_client(config["api_model"], config["model_configs"])
+    # Baseline is LLM-free, so skip client construction (no API key needed).
+    client = None if args.algo == "baseline" else create_client(config["api_model"], config["model_configs"])
 
     iterations = int(args.iterations or config.get("n_batches", 25))
     batch_size_default = config.get("tournament_batch_size", config.get("batch_size", 50))
