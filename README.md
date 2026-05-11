@@ -109,7 +109,9 @@ the resolved config.
 ## 5) Reproducing the paper
 
 A single script — `scripts/paper_recreate.sh` — does all runs and produces
-all plots, for both LLM APIs (groq and gemini).
+all plots, for both LLM APIs (groq and gemini). Linux/macOS only (uses
+bash-only features like `xargs -P` and `mktemp -t`); on Windows, run it
+under WSL or invoke `run_algorithm.py` directly per the §4 example.
 
 ```bash
 bash scripts/paper_recreate.sh

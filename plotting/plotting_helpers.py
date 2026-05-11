@@ -482,7 +482,6 @@ def expand_baseline_variants(algos):
 _RERANK_FILE_MAP = {
     "Leg 1 Ithaca to Reston VA_numeric_top20": ("flight02", "Complicated", "flight02.yml"),
     "Chicago_New York City_combined_numeric_filtered_top20": ("flight00", "Complicated_structured", "flight00.yml"),
-    "Chicago_New York City_binary_top20": ("flight00", "Complicated_structured", "flight00.yml"),
     "exam_data_top20": ("exam", "REGISTRAR", "exam.yml"),
     "headphones_data_top20": ("headphones", "STUDENT_HARD", "headphones.yml"),
 }
