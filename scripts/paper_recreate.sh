@@ -158,7 +158,13 @@ export OUTPUT_ROOT GROUP_STAMP RUN_ALGO PYTHON_BIN BASE_SEED ITERS
 
 # Submit a list of jobs and retry until each reaches its target rep count.
 # Each spec is "algo|scenario|mode|api|batch_size|prompt_variant|target_reps".
-BASE_SEED_OFFSET=0
+#
+# Seed assignment is per-job: a job that already has `current` reps on disk
+# gets seed offsets [current, current+1, ..., current+remaining-1]. This
+# makes resume safe (new reps always pick seeds that don't collide with
+# what's already on disk for that specific job). Different jobs may share
+# the same seed value, which is fine — they are independent experiments
+# with different (algo, scenario, mode, api, batch_size, prompt_variant).
 submit_jobs() {
   local section_name="$1"; shift
   local jobs=("$@")
@@ -178,8 +184,7 @@ submit_jobs() {
       all_done=false
       echo "  [${section_name} R${round}] ${algo}/${scen}/${mode}/${api}${bs:+/B${bs}}${pv:+/${pv}}: ${current}/${reps} — queuing ${remaining}"
       for ((i=0; i<remaining; i++)); do
-        local seed_offset=${BASE_SEED_OFFSET}
-        BASE_SEED_OFFSET=$((BASE_SEED_OFFSET + 1))
+        local seed_offset=$((current + i))
         if [[ "${algo}" == "full_batch" ]]; then
           serial_pending+=("${algo}|${scen}|${mode}|${api}|${bs}|${pv}|${seed_offset}")
         else
