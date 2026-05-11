@@ -6,11 +6,9 @@ dependencies:
   - pip
   - pandas
   - numpy
-  - scipy
-  - scikit-learn
   - matplotlib
-  - seaborn
-  - python-dotenv
+  - pyyaml
+  - pytest
   - pip:
       - groq
       - google-genai
