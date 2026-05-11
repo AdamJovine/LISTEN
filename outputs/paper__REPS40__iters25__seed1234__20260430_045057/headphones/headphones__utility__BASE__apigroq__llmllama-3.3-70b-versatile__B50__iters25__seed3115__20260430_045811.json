@@ -126,70 +126,6 @@
         "BASE": {
           "prompt": ""
         },
-        "PRICE": {
-          "prompt": "Prioritize minimizing price. This is the most important metric.\n",
-          "weights": {
-            "product_name": 0,
-            "brand": 0,
-            "price": -4.50646,
-            "type": 0.0,
-            "connectivity": 0.0,
-            "noise_cancellation": 0.0,
-            "battery_life": 0.0,
-            "bluetooth_version": 0.0,
-            "driver_size": 0.0,
-            "weight": 0.0,
-            "water_resistance": 0.0,
-            "microphone": 0.0,
-            "review_rating": 0.037758,
-            "review_count": 0.002802,
-            "description": 0
-          },
-          "human_sol": [
-            55,
-            33,
-            44,
-            43,
-            75,
-            25,
-            58,
-            36,
-            26,
-            35
-          ]
-        },
-        "REVIEW": {
-          "prompt": "The most important priority is maximizing review_rating. The second priority is maximizing review_count. The third priority is minimizing price. Other metrics matter less.\n",
-          "weights": {
-            "product_name": 0,
-            "brand": 0,
-            "price": -0.396549,
-            "type": 0.0,
-            "connectivity": 0.0,
-            "noise_cancellation": 0.0,
-            "battery_life": 0.0,
-            "bluetooth_version": 0.0,
-            "driver_size": 0.0,
-            "weight": 0.0,
-            "water_resistance": 0.0,
-            "microphone": 0.0,
-            "review_rating": 1.363325,
-            "review_count": 0.35465,
-            "description": 0
-          },
-          "human_sol": [
-            10,
-            29,
-            22,
-            4,
-            9,
-            69,
-            11,
-            65,
-            26,
-            32
-          ]
-        },
         "SOFT": {
           "prompt": "Objective:\n    I am a college student who is looking for recommendations for new headphones. \n\n    I prefer over-ear headphones rather than in-ear or on-ear, since they feel more comfortable for long hours and usually deliver better sound. \n    I also prefer wireless headphones because I don\u2019t want to deal with cables. \n    I would like the headphones to have active noise cancellation, since I often study in places where there is background noise. \n    A microphone is important to me because I sometimes use my headphones for calls.\n    \n    For battery life, I\u2019d like headphones that can last a long time on a single charge. \n    I usually don\u2019t mind recharging overnight, but I don\u2019t want headphones that run out of power quickly in the middle of the day.\n    \n    In terms of build, I actually prefer headphones that feel a bit heavier, since lightweight headphones sometimes feel cheap or less durable to me.\n    When I look at reviews, I prefer headphones with both a high rating and a large number of reviews, since that gives me more confidence in the product.\n    I would prefer headphones which have at least 5,000 reviews and a rating of at least 4.4.\n    To clarify the relative importance of both rating and number of reviews, I would rather pick headphones with \n    a 4.8 rating and 20,000 reviews than a 4.9 rating with 1000 reviews. \n    \n    Other metrics such as driver size, water resistance, and Bluetooth version do not matter at all to me.\n    I\u2019m not price-sensitive at all, so I\u2019m willing to pay more if the headphones meet my preferences well.\n",
           "weights": {
@@ -225,43 +161,6 @@
             46,
             74,
             12
-          ]
-        },
-        "STUDENT_GOLDILOCK": {
-          "prompt": "Objective:\n    I am a college student who is looking for recommendations for new headphones.\n\n    I prefer over-ear headphones rather than in-ear or on-ear, since they feel more comfortable for long hours and usually deliver better sound.\n    I also prefer wireless headphones because I don't want to deal with cables.\n    I would like the headphones to have active noise cancellation, since I often study in places where there is background noise.\n    A microphone is important to me because I sometimes use my headphones for calls.\n\n    For battery life, I'd like headphones that can last a long time on a single charge.\n    I usually don't mind recharging overnight, but I don't want headphones that run out of power quickly in the middle of the day.\n\n    In terms of build, I prefer headphones that don't weigh too much or too little, because very light headphones sometimes\n    feel cheap or less durable to me. However, very heavy headphones are hard to wear for several hours without causing head or neck strain.\n    When I look at reviews, I prefer headphones with both a high rating and a large number of reviews, since that gives me more confidence in the product.\n    I would prefer headphones which have at least 5,000 reviews and a rating of at least 4.4.\n    To clarify the relative importance of both rating and number of reviews, I would rather pick headphones with\n    a 4.8 rating and 20,000 reviews than a 4.9 rating with 1000 reviews.\n\n    Other metrics such as driver size, water resistance, and Bluetooth version do not matter at all to me.\n    I'm not price-sensitive at all, so I'm willing to pay more if the headphones meet my preferences well.\n",
-          "weights": {
-            "product_name": 0.0,
-            "brand": 0.0,
-            "price": -0.01,
-            "type": 0.0,
-            "connectivity": 0.0,
-            "noise_cancellation": 0.0,
-            "battery_life": 0.2939,
-            "bluetooth_version": 0.0,
-            "driver_size": 0.01,
-            "weight": 0.348,
-            "water_resistance": 0.0,
-            "microphone": 0.0,
-            "review_rating": 0.1481,
-            "review_count": 0.3178,
-            "description": 0.0
-          },
-          "human_sol": [
-            29,
-            30,
-            2,
-            24,
-            4,
-            23,
-            10,
-            22,
-            11,
-            65,
-            12,
-            13,
-            62,
-            15,
-            66
           ]
         },
         "MAIN": {
