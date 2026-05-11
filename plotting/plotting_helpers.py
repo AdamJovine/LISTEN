@@ -487,7 +487,7 @@ _RERANK_FILE_MAP = {
     "headphones_data_top20": ("headphones", "STUDENT_HARD", "headphones.yml"),
 }
 
-RERANK_HUMANS = ["adam", "amy", "francis", "joe", "matt"]
+RERANK_HUMANS = ["h1", "h2", "h3", "h4", "h5"]
 
 
 def load_rerank_baselines() -> List[Tuple[str, "Experiment"]]:
