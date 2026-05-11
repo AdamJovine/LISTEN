@@ -1,0 +1,111 @@
+tag: flights_ithaca_reston
+data_csv: input/Leg 1 Ithaca to Reston VA_numeric.csv
+metric_columns:
+  - name
+  - origin
+  - destination
+  - departure time
+  - arrival time
+  - duration
+  - stops
+  - price
+  - dis_from_origin
+  - dis_from_dest
+  - departure_seconds
+  - arrival_seconds
+  - duration_min
+
+metric_signs:
+  name: 0
+  origin: 0
+  destination: 0
+  departure time: 0
+  arrival time: 0
+  duration: 0
+  stops: -1
+  price: -1
+  dis_from_origin: -1
+  dis_from_dest: -1
+  departure_seconds: -1
+  arrival_seconds: 0
+  duration_min: -1
+
+non_numeric_metrics:
+  - name
+  - origin
+  - destination
+  - departure time
+  - arrival time
+  - duration
+
+prompt_vars:
+  comparison_noun: flight
+  utility_priorities: "priorities for customer satisfaction"
+  utility_domain: "flight itinerary selection"
+  best_item_found: "FLIGHT FOUND"
+  best_item_ref: "best flight"
+  analysis_questions: |
+    - Does the flight align with the desired time?
+    - Does the flight chosen factor in cost based on customer desire?
+    - Is this the most optimal flight?
+
+prompts:
+  scenario_header: |
+    You are an expert travel scheduling agent that specializes in air fare.
+    The data set is only for a one-way flight.
+    Use these definitions:
+    • name: name of airline operating the flight
+    • origin: origin airport
+    • destination: destination airport
+    • departure time: time of departure from origin airport
+    • arrival time: time of arrival at destination airport
+    • duration: how long the flight is
+    • stops: number of layover stops
+    • price: cost of the flight
+    • dis_from_origin: distance of origin airport from where the customer prefers (lower is better)
+    • dis_from_dest: distance of arrival airport from where the customer prefers (lower is better)
+    • departure_seconds: time of departure since a fixed date in seconds
+    • arrival_seconds: time of arrival since a fixed date in seconds
+    • duration_min: duration of total flight in minutes (lower is better)
+
+# Modes for flights_ithaca_reston scenario
+default_mode: Complicated
+modes:
+  BASE:
+    prompt: >
+
+    weights:
+      stops: -10
+      price: -8
+      dis_from_origin: -3
+      dis_from_dest: -3
+      departure_seconds: 0
+      arrival_seconds: 0
+      duration_min: -5
+  Complicated:
+    prompt: >
+      On October 20 I need to fly from where I live, in Ithaca NY, to a conference in Reston VA. The conference starts the next day (Oct 21) at 9am. I’d like to sleep well but if my travel plans are disrupted and I arrive late, it’s ok. I’ll either fly out of Ithaca, Syracuse, Elmira, or Binghamton.  
+      I’ll fly to DCA or IAD. For all my flights, I don’t like having to get up before 7am to be on time to my flight.  I’d like to avoid the amount of time I need to spend driving / taking Ubers / taking transit to airports both at home and at my destination. 
+      I prefer flying out of my local airport in Ithaca rather than driving or taking an Uber to a nearby airport in Syracuse, Elmira, or Binghamton.
+      I want to avoid extra connections because they take more time and increase the chance of missing a connection. I can move pretty quickly 
+      through airports so connections longer than 45 min are fine but for connections that are tighter than that I worry about missing my flight 
+      if there is a delay. If the connection is earlier in the day and there are lots of other ways to get to my destination in the event of a missed 
+      connection, then a 30 min connection is fine.
+      I prefer to avoid long layovers. Under 60 minutes is fine, under 90 minutes is not a huge deal, and over 90 minutes starts to get annoying. 
+      I feel that flying late in the day or connecting through airports with poor on-time performance like EWR increases my chance of a delay.  
+      I don’t like JFK because the food choices are poor (except for Shake Shack). When I fly to Europe from the US, I don’t like taking a redeye but I know I’ll usually have to take one. When I do take a redeye, I don’t like to have a long layover early in the morning — I prefer to just arrive at my destination.  If I do have a layover, I prefer to land later in the morning so that I can get some sleep on the plane. 
+      I prefer to fly United because I’m a frequent flyer with them. When I fly for work, my travel is usually reimbursed from federal grants. Because of this, I must comply with the Fly America Act. This requires me to fly on a US carrier unless there are no other options. Even if I’m allowed to reimburse a trip on a non-US carrier, I don’t want to because it creates extra paperwork.
+      For longer trips, I am happy to return to an airport that is different from the one I left from because I probably wouldn’t drive my car in any case. When I do this, I’ll take an Uber, rent a car, or get a ride. For shorter trips, however, I do prefer to return to the airport I left from so that I can drive to the airport, unless it saves me a lot of trouble. 
+      I am not very price sensitive. It is ok to pay 20% more than the cheapest fare if the itinerary is more convenient. But if the fare is outrageous then that’s problematic.
+      I usually don’t check bags except on very long trips.
+
+    weights:
+      stops: 0.4616
+      price: 0.0378
+      dis_from_origin: -0.0023
+      dis_from_dest: 0.0132
+      departure_seconds: 0.2777
+      arrival_seconds: -0.6524
+      duration_min: -1.1961
+    human_sol: [0,1,2,3,4,5,6,7,8,9,10,11]
+

@@ -41,19 +41,19 @@ ALGOS = ["tournament", "utility"]
 
 # Canonical scenario → mode pairs used for the plot.
 PLOT_SCENARIOS: Dict[str, str] = {
-    "flight02": "Complicated",
-    "flight00": "Complicated_structured",
-    "headphones": "STUDENT_HARD",
+    "flights_ithaca_reston": "Complicated",
+    "flights_chi_nyc": "Complicated_structured",
+    "headphones": "MAIN",
     "exam": "REGISTRAR",
 }
 
-# Rows for the CSV table — also includes headphones STUDENT.
+# Rows for the CSV table — also includes headphones SOFT.
 TABLE_ROWS: List[Tuple[str, str]] = [
-    ("flight02",   "Complicated"),
-    ("flight00",   "Complicated_structured"),
-    ("headphones", "STUDENT"),
-    ("headphones", "STUDENT_HARD"),
-    ("exam",       "REGISTRAR"),
+    ("flights_ithaca_reston", "Complicated"),
+    ("flights_chi_nyc",       "Complicated_structured"),
+    ("headphones",            "SOFT"),
+    ("headphones",            "MAIN"),
+    ("exam",                  "REGISTRAR"),
 ]
 
 TABLE_COLUMNS: List[Tuple[str, str, str]] = [

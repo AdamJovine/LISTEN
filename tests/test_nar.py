@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compute Normalized Average Rank (NAR) for flight00.
+"""Compute Normalized Average Rank (NAR) for flights_chi_nyc.
 
 Given N total items and a human ground-truth ranking of m items (1..m):
   - If selected item is at position p in the list, rank = p
@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_CSV = ROOT / "input" / "Chicago_New York City_combined_numeric.csv"
-CONFIG_PATH = ROOT / "configs" / "flight00.yml"
+CONFIG_PATH = ROOT / "configs" / "flights_chi_nyc.yml"
 
 
 def compute_nar(winner_idx, human_sol, N):
@@ -51,7 +51,7 @@ def main():
     modes = config.get("modes", {})
 
     zscore_winner = compute_zscore_winner(df, metric_signs)
-    print(f"Dataset: flight00 ({N} items)")
+    print(f"Dataset: flights_chi_nyc ({N} items)")
     print(f"Z-score avg winner: idx={zscore_winner}")
     print(f"  -> {df.loc[zscore_winner, 'name']} | ${df.loc[zscore_winner, 'price']} | {df.loc[zscore_winner, 'departure time']}")
 

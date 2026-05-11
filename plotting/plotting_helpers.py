@@ -313,11 +313,11 @@ ALGO_ORDER = [
     "BaselineRerank",
 ]
 
-SCENARIO_ORDER = ["flight02", "flight00", "headphones", "exam"]
+SCENARIO_ORDER = ["flights_ithaca_reston", "flights_chi_nyc", "headphones", "exam"]
 
 SCENARIO_DISPLAY_NAMES = {
-    "flight02": "Flights Ithaca->Reston",
-    "flight00": "Flights CHI->NYC",
+    "flights_ithaca_reston": "Flights Ithaca->Reston",
+    "flights_chi_nyc": "Flights CHI->NYC",
     "headphones": "Headphones",
     "exam": "Exam Scheduling",
 }
@@ -480,10 +480,10 @@ def expand_baseline_variants(algos):
 
 # Maps top20 CSV filename stems to (scenario, mode, scenario_config_file)
 _RERANK_FILE_MAP = {
-    "Leg 1 Ithaca to Reston VA_numeric_top20": ("flight02", "Complicated", "flight02.yml"),
-    "Chicago_New York City_combined_numeric_filtered_top20": ("flight00", "Complicated_structured", "flight00.yml"),
+    "Leg 1 Ithaca to Reston VA_numeric_top20": ("flights_ithaca_reston", "Complicated", "flights_ithaca_reston.yml"),
+    "Chicago_New York City_combined_numeric_filtered_top20": ("flights_chi_nyc", "Complicated_structured", "flights_chi_nyc.yml"),
     "exam_data_top20": ("exam", "REGISTRAR", "exam.yml"),
-    "headphones_data_top20": ("headphones", "STUDENT_HARD", "headphones.yml"),
+    "headphones_data_top20": ("headphones", "MAIN", "headphones.yml"),
 }
 
 RERANK_HUMANS = ["h1", "h2", "h3", "h4", "h5"]
@@ -542,7 +542,7 @@ def load_rerank_baselines() -> List[Tuple[str, "Experiment"]]:
                 continue
             scenario, mode, config_file = mapping
 
-            # Skip duplicates (e.g. binary and combined both map to flight00)
+            # Skip duplicates (defensive: kept in case future rerank dirs reintroduce variant CSVs that map to the same scenario)
             dedup_key = (human, scenario)
             if dedup_key in seen:
                 continue

@@ -28,7 +28,7 @@ def test_baseline_cli_end_to_end(tmp_path: Path) -> None:
         sys.executable,
         str(RUN_ALGO),
         "--algo", "baseline",
-        "--scenario", "flight02",
+        "--scenario", "flights_ithaca_reston",
         "--mode", "Complicated",
         "--api-model", "groq",  # baseline never instantiates the client
         "--iterations", "3",
@@ -49,12 +49,12 @@ def test_baseline_cli_end_to_end(tmp_path: Path) -> None:
 
     meta = payload["meta"]
     assert meta["algo"] == "baseline"
-    assert meta["scenario"] == "flight02"
+    assert meta["scenario"] == "flights_ithaca_reston"
     assert meta["mode"] == "Complicated"
     assert meta["max_iters"] == 3
     assert meta["seed"] == 42
     assert meta["nar"] is not None, "NAR should be populated"
 
-    # final_winner_idx must be a valid row in the flight02 data
+    # final_winner_idx must be a valid row in the flights_ithaca_reston data
     winner = payload["results"].get("final_winner_idx")
     assert isinstance(winner, int) and winner >= 0

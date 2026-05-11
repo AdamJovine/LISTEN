@@ -61,19 +61,19 @@ each with a canonical mode:
 | Scenario     | Canonical mode             | Data file                                                |
 |--------------|----------------------------|----------------------------------------------------------|
 | `exam`       | `REGISTRAR`                | `input/exam_data.csv`                                    |
-| `flight00`   | `Complicated_structured`   | `input/Chicago_New York City_combined_numeric_filtered.csv` |
-| `flight02`   | `Complicated`              | `input/Leg 1 Ithaca to Reston VA_numeric.csv`            |
-| `headphones` | `STUDENT_HARD`             | `input/headphones_data.csv`                              |
+| `flights_chi_nyc`   | `Complicated_structured`   | `input/Chicago_New York City_combined_numeric_filtered.csv` |
+| `flights_ithaca_reston`   | `Complicated`              | `input/Leg 1 Ithaca to Reston VA_numeric.csv`            |
+| `headphones` | `MAIN`             | `input/headphones_data.csv`                              |
 
 Each config also defines a `BASE` mode (no preference utterance) used in the
-preference-utterance ablation, and `headphones` additionally defines `STUDENT`.
+preference-utterance ablation, and `headphones` additionally defines `SOFT`.
 
 ## 4) Single run
 
 ```bash
 python run_algorithm.py \
   --algo tournament \
-  --scenario flight02 \
+  --scenario flights_ithaca_reston \
   --mode Complicated \
   --api-model groq \
   --iterations 25 \
@@ -130,8 +130,8 @@ Output layout:
 ```
 outputs/paper__REPS40__iters25__seed1234__<stamp>/
 ├── exam/        all exam runs (every algo / mode / batch / prompt variant)
-├── flight00/    all flight00 runs
-├── flight02/    all flight02 runs
+├── flights_chi_nyc/    all flights_chi_nyc runs
+├── flights_ithaca_reston/    all flights_ithaca_reston runs
 ├── headphones/  all headphones runs
 └── plots/       the five paper plots + CSV tables
 ```
@@ -140,11 +140,11 @@ The script runs five sections, each with a retry-until-target loop:
 
 | § | What it runs | Reps |
 |---|---|---|
-| 1 | Tournament × B={2,4,8,16,32} × {flight02:Complicated, flight00:Complicated_structured, exam:REGISTRAR, headphones:STUDENT_HARD} × {groq, gemini}, default prompt `header_then_task_v1` | 40 each |
-| 2 | Tournament @ B=8 + utility × headphones:STUDENT × {groq, gemini} | 40 each |
+| 1 | Tournament × B={2,4,8,16,32} × {flights_ithaca_reston:Complicated, flights_chi_nyc:Complicated_structured, exam:REGISTRAR, headphones:MAIN} × {groq, gemini}, default prompt `header_then_task_v1` | 40 each |
+| 2 | Tournament @ B=8 + utility × headphones:SOFT × {groq, gemini} | 40 each |
 | 3 | Utility / baseline / full_batch × 4 canonical pairs × {groq, gemini} | 40 each |
 | 4 | Tournament @ B=32 + utility × 4 canonical pairs × `task_then_header_v1` × {groq, gemini} (reverse-prompt set for the order study) | 40 each |
-| 5 | Tournament @ B=32 + utility × {flight02:BASE, flight00:BASE, exam:BASE, headphones:BASE} × {groq, gemini} (preference-utterance ablation) | 40 each |
+| 5 | Tournament @ B=32 + utility × {flights_ithaca_reston:BASE, flights_chi_nyc:BASE, exam:BASE, headphones:BASE} × {groq, gemini} (preference-utterance ablation) | 40 each |
 
 Section 6 then generates all five paper plots into `<OUTPUT_ROOT>/plots/`.
 
@@ -154,7 +154,7 @@ All plot scripts can also be run standalone against any run directory:
 
 | Plot                                         | Script                                       | Reads from              |
 |----------------------------------------------|----------------------------------------------|-------------------------|
-| Headphones STUDENT vs STUDENT_HARD           | `plotting/headphones_plot.py`                | `--output-dir <RUN>`    |
+| Headphones SOFT vs MAIN           | `plotting/headphones_plot.py`                | `--output-dir <RUN>`    |
 | Cross-scenario × algorithm (LISTEN-T, LISTEN-U, baseline, full-batch, human rerank) | `plotting/general_plot.py` with `--canonical_mode` | `--path <RUN>` |
 | Per-scenario batch-size sweep (B={2,4,8,16,32}) | `plotting/general_plot.py`                | `--path <RUN>`          |
 | Reorder (header_then_task vs task_then_header) | `plotting/plot_order_study.py` (PNG + CSV) | `--data-dir <RUN>`      |
@@ -183,7 +183,7 @@ Per-pair:
 
 ```bash
 python post_analysis/concordance_analysis.py \
-  --scenario headphones --mode STUDENT_HARD \
+  --scenario headphones --mode MAIN \
   --n-samples 10000 --random-seed 42
 ```
 

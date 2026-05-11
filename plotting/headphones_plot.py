@@ -4,7 +4,7 @@ Plot normalized average rank (mean ± 2SE) of the final top-ranked item
 for BOTH tournament and utility algorithms.
 
 Supports two modes:
-  1. Mode comparison (default): compare STUDENT vs STUDENT_HARD for a scenario
+  1. Mode comparison (default): compare SOFT vs MAIN for the headphones scenario
   2. Layout comparison (--layout-dirs): compare prompt layouts (e.g. header_then_task_v1 vs task_then_header_v1)
 """
 
@@ -297,7 +297,7 @@ def layout_comparison_plot(args: argparse.Namespace):
     ax.set_xticklabels(x_labels, fontsize=7, rotation=20, ha='right')
 
     # Cluster annotations below the bar labels (mode + algo)
-    mode_display = {"STUDENT": "Headphones-General", "STUDENT_HARD": "Headphones-Soft"}
+    mode_display = {"SOFT": "Headphones-Soft", "MAIN": "Headphones"}
     for cluster_start in range(0, len(bar_specs), cluster_size):
         cluster = bar_specs[cluster_start:cluster_start + cluster_size]
         cluster_positions = positions[cluster_start:cluster_start + cluster_size]
@@ -339,11 +339,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Compare modes (STUDENT vs STUDENT_HARD):
+  # Compare modes (SOFT vs MAIN):
   python headphones_plot.py --scenario headphones --output-dir outputs/some_dir
 
   # Compare prompt layouts:
-  python headphones_plot.py --scenario headphones --mode STUDENT_HARD \\
+  python headphones_plot.py --scenario headphones --mode MAIN \\
     --layout-dirs outputs/order_study_.../header_then_task_v1 outputs/order_study_.../task_then_header_v1
         """
     )

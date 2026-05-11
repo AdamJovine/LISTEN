@@ -162,13 +162,13 @@ prompts:
     from columns where mappings exist into qualitative data, because otherwise the comparisons would essentially be between random numbers.
 
 # Modes for headphone scenario
-default_mode: STUDENT_HARD
+default_mode: MAIN
 
 modes:
   BASE:
     prompt: >
 
-  STUDENT:
+  SOFT:
     prompt: >
       Objective:
           I am a college student who is looking for recommendations for new headphones. 
@@ -208,7 +208,7 @@ modes:
       description: 0.0
     human_sol: [23, 2, 56, 29, 66, 24, 1, 15, 30, 4, 20, 10, 46, 74, 12]
 
-  STUDENT_HARD:
+  MAIN:
     prompt: >
       Objective:
           I am seeking recommendations for premium wireless over-ear headphones designed for both long study sessions and high-quality music listening. The ideal options should balance advanced features, comfort, and practicality to support a student lifestyle.
