@@ -37,7 +37,7 @@ cd "${REPO_ROOT}"
 
 # ── Knobs ───────────────────────────────────────────────────────────────────
 TARGET_REPS="${TARGET_REPS:-40}"
-BASELINE_REPS="${BASELINE_REPS:-1}"   # baseline is deterministic; 1 run is enough
+BASELINE_REPS="${BASELINE_REPS:-40}"  # baseline mixes deterministic z-score with random-pick; match TARGET_REPS so the random arm is properly sampled (per paper §4.2: 40 reps)
 ITERS="${ITERS:-25}"
 BASE_SEED="${BASE_SEED:-1234}"
 JOBS="${JOBS:-4}"
