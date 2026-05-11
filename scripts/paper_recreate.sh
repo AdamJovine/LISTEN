@@ -50,7 +50,7 @@ SWEEP_BATCH_SIZES=(2 4 8 16 32)
 ORDER_BATCH_SIZE=32
 BASE_BATCH_SIZE=32
 
-API_MODELS=("groq" )
+API_MODELS=("groq" "gemini")
 
 CANONICAL_PAIRS=(
   "flight02:Complicated"
@@ -211,10 +211,6 @@ submit_jobs() {
   done
 }
 
-# TEMPORARY: skip all run sections so we can iterate on plotting only.
-# Flip to `true` to re-enable Sections 1-5.
-if false; then
-
 # ─── Section 1: Tournament batch sweep on canonical scenarios ───────────────
 echo "═══════════════════════════════════════════════════════════════════"
 echo "[SECTION 1] Tournament batch sweep over canonical scenarios"
@@ -288,8 +284,6 @@ submit_jobs "S5" "${S5_JOBS[@]}"
 echo "═══════════════════════════════════════════════════════════════════"
 echo "[DONE] All runs complete in ${OUTPUT_ROOT}"
 echo "═══════════════════════════════════════════════════════════════════"
-
-fi  # ── end TEMPORARY run-sections guard ──
 
 # ─── Section 6: Plots ───────────────────────────────────────────────────────
 PLOT_DIR="${OUTPUT_ROOT}/plots"
