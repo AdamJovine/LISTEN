@@ -62,8 +62,8 @@ def _load_algo_from_output(output_path: Path) -> TournamentExperiment:
 @pytest.mark.parametrize(
     ("scenario", "mode", "expected_prefix"),
     [
-        ("flight00", "Complicated_structured", [593, 685, 602, 612, 692, 603, 617, 481, 1, 276, 138, 5, 426, 285, 271, 7]),
-        ("flight02", "Complicated", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+        ("flights_chi_nyc", "Complicated_structured", [593, 685, 602, 612, 692, 603, 617, 481, 1, 276, 138, 5, 426, 285, 271, 7]),
+        ("flights_ithaca_reston", "Complicated", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
     ],
 )
 def test_get_rank_respects_human_sol_order_for_curated_modes(scenario, mode, expected_prefix):
@@ -147,8 +147,8 @@ def test_get_rank_defaults_when_human_sol_missing():
 @pytest.mark.parametrize(
     ("mode", "expected_prefix"),
     [
-        ("STUDENT", [23, 2, 56, 29, 66]),
-        ("STUDENT_HARD", [4, 22, 1, 2, 74]),
+        ("SOFT", [23, 2, 56, 29, 66]),
+        ("MAIN", [4, 22, 1, 2, 74]),
     ],
 )
 def test_get_rank_respects_headphones_human_sol(mode, expected_prefix):

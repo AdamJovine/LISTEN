@@ -62,9 +62,9 @@ ALGO_CLI_MAP = {
 # Canonical mode per scenario — used with --canonical_mode flag
 CANONICAL_MODES: Dict[str, str] = {
     "exam": "REGISTRAR",
-    "flight00": "Complicated_structured",
-    "flight02": "Complicated",
-    "headphones": "STUDENT_HARD",
+    "flights_chi_nyc": "Complicated_structured",
+    "flights_ithaca_reston": "Complicated",
+    "headphones": "MAIN",
 }
 
 
@@ -343,7 +343,7 @@ Metrics: accuracy, nar, gtu
     ap.add_argument(
         "--canonical_mode", action="store_true",
         help="For each scenario, only include experiments whose mode matches the canonical mode "
-             f"(e.g. exam=REGISTRAR, flight02=Complicated, headphones=STUDENT_HARD)"
+             f"(e.g. exam=REGISTRAR, flights_ithaca_reston=Complicated, headphones=MAIN)"
     )
     ap.add_argument(
         "--output-dir", dest="output_dir",

@@ -412,7 +412,7 @@ def test_from_json_infers_utility_algorithm():
         "algo": "UtilityExperiment",
         "meta": {
             "scenario": "headphones",
-            "mode": "STUDENT",
+            "mode": "SOFT",
         },
         "config": {"metric_columns": ["score"], "iterations": 1},
         "solutions": [{"score": 1.0}, {"score": 2.0}],
@@ -425,7 +425,7 @@ def test_from_json_infers_utility_algorithm():
     assert isinstance(algo, UtilityExperiment)
     assert algo.get_algo() == "UtilityExperiment"
     assert algo.get_scenario() == "headphones"
-    assert algo.get_mode() == "STUDENT"
+    assert algo.get_mode() == "SOFT"
 
 
 def test_from_json_reads_algo_from_meta():
@@ -435,7 +435,7 @@ def test_from_json_reads_algo_from_meta():
     data = {
         "meta": {
             "algo": "tournament",
-            "scenario": "flight00",
+            "scenario": "flights_chi_nyc",
             "mode": "Complicated",
         },
         "config": {"metric_columns": ["cost"], "batch_size": 2, "iterations": 3},
@@ -446,7 +446,7 @@ def test_from_json_reads_algo_from_meta():
     algo = Experiment.from_json(data)
 
     assert isinstance(algo, TournamentExperiment)
-    assert algo.get_scenario() == "flight00"
+    assert algo.get_scenario() == "flights_chi_nyc"
     assert algo.get_mode() == "Complicated"
 
 

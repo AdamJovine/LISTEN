@@ -53,18 +53,18 @@ BASE_BATCH_SIZE=32
 API_MODELS=("groq" "gemini")
 
 CANONICAL_PAIRS=(
-  "flight02:Complicated"
-  "flight00:Complicated_structured"
+  "flights_ithaca_reston:Complicated"
+  "flights_chi_nyc:Complicated_structured"
   "exam:REGISTRAR"
-  "headphones:STUDENT_HARD"
+  "headphones:MAIN"
 )
 BASE_PAIRS=(
-  "flight02:BASE"
-  "flight00:BASE"
+  "flights_ithaca_reston:BASE"
+  "flights_chi_nyc:BASE"
   "exam:BASE"
   "headphones:BASE"
 )
-HEADPHONES_STUDENT="headphones:STUDENT"
+HEADPHONES_STUDENT="headphones:SOFT"
 
 GROUP_STAMP="$(date -u +"%Y%m%d_%H%M%S")"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/outputs/paper__REPS${TARGET_REPS}__iters${ITERS}__seed${BASE_SEED}__${GROUP_STAMP}}"

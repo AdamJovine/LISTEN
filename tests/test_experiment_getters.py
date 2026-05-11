@@ -15,7 +15,7 @@ from prompt_utility import UtilityPromptTemplate
 ARTIFACT = Path(__file__).parent / "fixtures" / "exam_tournament_fixture.json"
 
 # All scenarios to test
-SCENARIOS = ["exam", "headphones", "flight00", "flight02"]
+SCENARIOS = ["exam", "headphones", "flights_chi_nyc", "flights_ithaca_reston"]
 
 
 def _extract_comparison_templates(comparison_base) -> list[str]:

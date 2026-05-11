@@ -21,11 +21,11 @@ STAMP="$(date -u +"%Y%m%d_%H%M%S")"
 OUTPUT_CSV="${SCRIPT_DIR}/concordance_results_n${N_SAMPLES}_${STAMP}.csv"
 
 PAIRS=(
-  "flight00:Complicated_structured"
-  "flight02:Complicated"
+  "flights_chi_nyc:Complicated_structured"
+  "flights_ithaca_reston:Complicated"
   "exam:REGISTRAR"
-  "headphones:STUDENT"
-  "headphones:STUDENT_HARD"
+  "headphones:SOFT"
+  "headphones:MAIN"
 )
 
 echo "[concordance] N_SAMPLES=${N_SAMPLES} RANDOM_SEED=${RANDOM_SEED}"

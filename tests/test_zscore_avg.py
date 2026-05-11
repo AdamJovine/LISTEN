@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compute the z-score average winner for flight00.
+"""Compute the z-score average winner for flights_chi_nyc.
 
 Method: For each numerical attribute, standardize values to zero mean and unit
 variance (z-score). Negate scores for attributes to be minimized. Select the
@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DATA_CSV = ROOT / "input" / "Chicago_New York City_combined_numeric.csv"
 
-# From configs/flight00.yml — metric_sign of -1 means minimize, 0 means ignore
+# From configs/flights_chi_nyc.yml — metric_sign of -1 means minimize, 0 means ignore
 METRIC_SIGNS = {
     "name": 0,
     "origin": 0,

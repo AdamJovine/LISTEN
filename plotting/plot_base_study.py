@@ -40,10 +40,10 @@ ALGO_DISPLAY = {"tournament": "LISTEN-T", "utility": "LISTEN-U"}
 
 # scenario -> (primary mode, BASE mode, config_file)
 SCENARIOS: Dict[str, Tuple[str, str, str]] = {
-    "flight02":   ("Complicated",            "BASE", "flight02.yml"),
-    "flight00":   ("Complicated_structured", "BASE", "flight00.yml"),
-    "headphones": ("STUDENT_HARD",           "BASE", "headphones.yml"),
-    "exam":       ("REGISTRAR",              "BASE", "exam.yml"),
+    "flights_ithaca_reston": ("Complicated",            "BASE", "flights_ithaca_reston.yml"),
+    "flights_chi_nyc":       ("Complicated_structured", "BASE", "flights_chi_nyc.yml"),
+    "headphones":            ("MAIN",                   "BASE", "headphones.yml"),
+    "exam":                  ("REGISTRAR",              "BASE", "exam.yml"),
 }
 
 MODE_KINDS = ["primary", "base"]
