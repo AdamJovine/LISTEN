@@ -68,7 +68,7 @@ prompts:
     • arrival_seconds: time of arrival since a fixed date in seconds
     • duration_min: duration of total flight in minutes (lower is better)
 
-# Modes for flight02 scenario
+# Modes for flights_ithaca_reston scenario
 default_mode: Complicated
 modes:
   BASE:

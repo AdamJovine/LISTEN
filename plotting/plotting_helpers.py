@@ -542,7 +542,7 @@ def load_rerank_baselines() -> List[Tuple[str, "Experiment"]]:
                 continue
             scenario, mode, config_file = mapping
 
-            # Skip duplicates (e.g. binary and combined both map to flight00)
+            # Skip duplicates (defensive: kept in case future rerank dirs reintroduce variant CSVs that map to the same scenario)
             dedup_key = (human, scenario)
             if dedup_key in seen:
                 continue

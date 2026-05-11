@@ -10,7 +10,7 @@
 #   1. Tournament batch sweep (B={2,4,8,16,32}) over the 4 canonical
 #      (scenario, mode) pairs in the default prompt format
 #      (header_then_task_v1).
-#   2. Headphones STUDENT mode: tournament @ B=8 + utility, default format.
+#   2. Headphones SOFT mode: tournament @ B=8 + utility, default format.
 #   3. utility / baseline / full_batch in canonical modes (default format).
 #   4. Reverse prompt format (task_then_header_v1) at B=32 over the 4
 #      canonical pairs (tournament + utility) — for the order study.
@@ -226,9 +226,9 @@ for api in "${API_MODELS[@]}"; do
 done
 submit_jobs "S1" "${S1_JOBS[@]}"
 
-# ─── Section 2: Headphones STUDENT mode ─────────────────────────────────────
+# ─── Section 2: Headphones SOFT mode ────────────────────────────────────────
 echo "═══════════════════════════════════════════════════════════════════"
-echo "[SECTION 2] Headphones STUDENT (tournament B=${MAIN_BATCH_SIZE}, utility)"
+echo "[SECTION 2] Headphones SOFT (tournament B=${MAIN_BATCH_SIZE}, utility)"
 echo "═══════════════════════════════════════════════════════════════════"
 IFS=":" read -r hp_scen hp_mode <<<"${HEADPHONES_STUDENT}"
 S2_JOBS=()
@@ -294,8 +294,8 @@ echo "════════════════════════�
 echo "[SECTION 6] Plots -> ${PLOT_DIR}"
 echo "═══════════════════════════════════════════════════════════════════"
 
-# Plot 1: Headphones STUDENT vs STUDENT_HARD (one figure per api_model)
-echo "[PLOT 1] Headphones STUDENT vs STUDENT_HARD"
+# Plot 1: Headphones SOFT vs MAIN (one figure per api_model)
+echo "[PLOT 1] Headphones SOFT vs MAIN"
 for api in "${API_MODELS[@]}"; do
   "${PYTHON_BIN}" "${REPO_ROOT}/plotting/headphones_plot.py" \
     --scenario headphones \

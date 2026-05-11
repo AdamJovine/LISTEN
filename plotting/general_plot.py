@@ -10,10 +10,10 @@ The CLI uses a hierarchical structure:
 
 Examples:
     # NAR vs Scenario, grouped by algorithm
-    python general_plot.py --path outputs/flight02 --x_large api_model groq --x_medium scenario --x_small algo --y nar
+    python general_plot.py --path outputs/flights_ithaca_reston --x_large api_model groq --x_medium scenario --x_small algo --y nar
 
     # Accuracy vs Batch Size for all algorithms
-    python general_plot.py --path outputs/flight02 --x_large algo all --x_medium batch_size --y accuracy
+    python general_plot.py --path outputs/flights_ithaca_reston --x_large algo all --x_medium batch_size --y accuracy
 
     # GTU vs Algorithm for both api_models (generates one plot per api_model)
     python general_plot.py --path outputs/exam --x_large api_model all --x_medium algo --y gtu
@@ -296,10 +296,10 @@ def main() -> None:
         epilog="""
 Examples:
   # NAR vs Scenario, grouped by algorithm
-  python general_plot.py --path outputs/flight02 --x_large api_model groq --x_medium scenario --x_small algo --y nar
+  python general_plot.py --path outputs/flights_ithaca_reston --x_large api_model groq --x_medium scenario --x_small algo --y nar
 
   # Accuracy vs Batch Size for all algorithms (generates one plot per algorithm)
-  python general_plot.py --path outputs/flight02 --x_large algo all --x_medium batch_size --y accuracy
+  python general_plot.py --path outputs/flights_ithaca_reston --x_large algo all --x_medium batch_size --y accuracy
 
   # GTU vs Algorithm for both api_models (generates two plots)
   python general_plot.py --path outputs/exam --x_large api_model all --x_medium algo --y gtu
@@ -314,7 +314,7 @@ Metrics: accuracy, nar, gtu
     )
     ap.add_argument(
         "--x_large", nargs='+', metavar="FIELD_VALUE",
-        help="Big label: field-value pairs. E.g., 'api_model groq scenario flight02'. Value can be 'all'. Omit for a single plot."
+        help="Big label: field-value pairs. E.g., 'api_model groq scenario flights_ithaca_reston'. Value can be 'all'. Omit for a single plot."
     )
     ap.add_argument(
         "--x_medium", nargs='+', required=True, metavar="FIELD_VALUE",
@@ -356,7 +356,7 @@ Metrics: accuracy, nar, gtu
     args = ap.parse_args()
 
     # Parse x_large argument as field-value pairs (optional)
-    # E.g., "api_model groq scenario flight02" -> {api_model: groq, scenario: flight02}
+    # E.g., "api_model groq scenario flights_ithaca_reston" -> {api_model: groq, scenario: flights_ithaca_reston}
     x_large_filters: Dict[str, str] = {}
     if args.x_large:
         tokens = args.x_large
