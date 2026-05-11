@@ -25,7 +25,6 @@ algorithms are included: `tournament` (LISTEN-T), `utility` (LISTEN-U),
 ├── plotting/               # Figure-generation scripts
 ├── post_analysis/          # Concordance metric (paper §4.1) + sweep helpers
 ├── scripts/                # Bash drivers for paper experiments
-├── tools/                  # One-shot helpers (e.g. legacy-output rename)
 └── tests/                  # pytest suite
 ```
 
