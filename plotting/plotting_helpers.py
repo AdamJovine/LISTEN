@@ -65,7 +65,7 @@ def add_common_plot_args(ap: argparse.ArgumentParser) -> argparse.ArgumentParser
 
 
 def load_payload(path: Path) -> Dict[str, Any]:
-    with path.open("r") as f:
+    with path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -487,7 +487,7 @@ _RERANK_FILE_MAP = {
     "headphones_data_top20": ("headphones", "STUDENT_HARD", "headphones.yml"),
 }
 
-RERANK_HUMANS = ["adam", "amy", "francis", "joe", "matt"]
+RERANK_HUMANS = ["h1", "h2", "h3", "h4", "h5"]
 
 
 def load_rerank_baselines() -> List[Tuple[str, "Experiment"]]:
@@ -510,7 +510,7 @@ def load_rerank_baselines() -> List[Tuple[str, "Experiment"]]:
         cache_key = f"{scenario}_{mode}"
         if cache_key in _scenario_cache:
             return _scenario_cache[cache_key]
-        with open(configs_dir / config_file) as f:
+        with open(configs_dir / config_file, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
         df = pd.read_csv(ROOT / cfg["data_csv"])
         metric_cols = cfg.get("metric_columns", [])

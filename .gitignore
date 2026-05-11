@@ -32,8 +32,7 @@ node_modules/
 dist/
 build/
 
-# IDE / CI
-.github/
+# IDE
 .vscode/
 
 # Environment files

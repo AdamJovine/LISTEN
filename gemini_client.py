@@ -1,5 +1,8 @@
 """
 Gemini preference client with the same lightweight interface as the Groq/local clients.
+
+Uses the unified `google.genai` SDK throughout. The legacy
+`google.generativeai` package is end-of-life and is no longer imported.
 """
 from __future__ import annotations
 
@@ -8,10 +11,7 @@ import os
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-# Requires: pip install google-generativeai
-import google.generativeai as genai
-# New SDK for logprobs support: pip install google-genai
-from google import genai as genai_new
+from google import genai
 from google.genai.types import GenerateContentConfig
 
 from base_client import BaseLLMClient
@@ -45,16 +45,13 @@ class GeminiPreferenceClient(BaseLLMClient):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY (or api_key) is required")
-        print(f"[GeminiPreferenceClient] Using apikey: {self.api_key}")
 
         self.enable_logprobs = enable_logprobs
         self.logprobs_k = logprobs_k
         self._last_logprobs: Optional[Dict[str, Any]] = None
 
-        genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel(self.model_name)
-
-        # Vertex AI client for logprobs (logprobs only available via Vertex AI, not the free API)
+        # Logprobs are only available via Vertex AI. The public Gemini API
+        # (api_key auth) does not return them.
         if self.enable_logprobs:
             self.gcp_project = gcp_project or os.getenv("GCP_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT")
             if not self.gcp_project:
@@ -62,12 +59,17 @@ class GeminiPreferenceClient(BaseLLMClient):
                     "Logprobs require Vertex AI. Set --gcp-project, GCP_PROJECT, or GOOGLE_CLOUD_PROJECT env var."
                 )
             self.gcp_location = gcp_location or "us-central1"
-            self._genai_client = genai_new.Client(
+            self._client = genai.Client(
                 vertexai=True,
                 project=self.gcp_project,
                 location=self.gcp_location,
             )
-            print(f"[GeminiPreferenceClient] Logprobs enabled via Vertex AI (project={self.gcp_project}, location={self.gcp_location})")
+            print(
+                f"[GeminiPreferenceClient] Logprobs enabled via Vertex AI "
+                f"(project={self.gcp_project}, location={self.gcp_location})"
+            )
+        else:
+            self._client = genai.Client(api_key=self.api_key)
 
         self._FINAL_TAG_RE = re.compile(r"^\s*FINAL\s*[:=\-]?\s*([AB])\b", re.IGNORECASE | re.MULTILINE)
         self._seed_supported = True
@@ -172,6 +174,28 @@ class GeminiPreferenceClient(BaseLLMClient):
             return lone[-1].upper()
         return text[0].upper() if text and text[0] in ("A", "B", "a", "b") else "A"
 
+    # ------------------------------------------------------------- config build
+    def _build_config(
+        self,
+        *,
+        temperature: float,
+        top_p: float,
+        max_tokens: int,
+        seed: Optional[int],
+        include_logprobs: bool,
+    ) -> GenerateContentConfig:
+        kwargs: Dict[str, Any] = {
+            "temperature": float(temperature),
+            "top_p": float(top_p),
+            "max_output_tokens": int(max_tokens),
+        }
+        if seed is not None and self._seed_supported:
+            kwargs["seed"] = int(seed)
+        if include_logprobs:
+            kwargs["response_logprobs"] = True
+            kwargs["logprobs"] = self.logprobs_k
+        return GenerateContentConfig(**kwargs)
+
     # ---------------------------------------------------------------- core call
     def _post_chat(
         self,
@@ -206,93 +230,64 @@ class GeminiPreferenceClient(BaseLLMClient):
         )
         prompt = guard + base_prompt
 
-        gen_cfg: Dict[str, Any] = {
-            "temperature": float(temperature),
-            "top_p": float(top_p),
-            "max_output_tokens": int(max_tokens),
-        }
+        def _build_cfg(cap: int) -> GenerateContentConfig:
+            return self._build_config(
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=cap,
+                seed=seed,
+                include_logprobs=self.enable_logprobs,
+            )
 
         def _call(stream: bool, prompt_text: str, cap: int) -> Tuple[str, Dict[str, Any]]:
-            cfg = dict(gen_cfg)
-            cfg["max_output_tokens"] = int(cap)
-            try_seed = (seed is not None) and self._seed_supported
-
             def _make_request():
-                if stream:
-                    if try_seed:
-                        try:
-                            resp_stream = self.model.generate_content(
-                                prompt_text, generation_config={**cfg, "seed": int(seed)}, stream=True, safety_settings=None
-                            )
-                        except Exception as e:
-                            if "seed" in str(e).lower():
-                                self._seed_supported = False
-                                resp_stream = self.model.generate_content(
-                                    prompt_text, generation_config=cfg, stream=True, safety_settings=None
-                                )
-                            else:
-                                raise
-                    else:
-                        resp_stream = self.model.generate_content(
-                            prompt_text, generation_config=cfg, stream=True, safety_settings=None
-                        )
-                    chunks: List[str] = []
-                    for ev in resp_stream:
-                        t = getattr(ev, "text", None)
-                        if t:
-                            chunks.append(t)
-                    return "".join(chunks).strip(), {}
-                else:
-                    if try_seed:
-                        try:
-                            resp = self.model.generate_content(
-                                prompt_text, generation_config={**cfg, "seed": int(seed)}, safety_settings=None
-                            )
-                        except Exception as e:
-                            if "seed" in str(e).lower():
-                                self._seed_supported = False
-                                resp = self.model.generate_content(prompt_text, generation_config=cfg, safety_settings=None)
-                            else:
-                                raise
-                    else:
-                        resp = self.model.generate_content(prompt_text, generation_config=cfg, safety_settings=None)
-                    text, meta = self._extract_text_from_response(resp)
-                    return text, meta
+                try:
+                    cfg = _build_cfg(cap)
+                except Exception:
+                    raise
+
+                try:
+                    if stream:
+                        chunks: List[str] = []
+                        last_response = None
+                        for ev in self._client.models.generate_content_stream(
+                            model=self.model_name, contents=prompt_text, config=cfg
+                        ):
+                            last_response = ev
+                            t = getattr(ev, "text", None)
+                            if t:
+                                chunks.append(t)
+                        if self.enable_logprobs and last_response is not None:
+                            self._last_logprobs = self._extract_logprobs(last_response)
+                        return "".join(chunks).strip(), {}
+                    resp = self._client.models.generate_content(
+                        model=self.model_name, contents=prompt_text, config=cfg
+                    )
+                except Exception as e:
+                    # Fall back if the server rejects the seed parameter.
+                    if "seed" in str(e).lower() and self._seed_supported:
+                        self._seed_supported = False
+                        return _make_request()
+                    raise
+
+                if self.enable_logprobs:
+                    self._last_logprobs = self._extract_logprobs(resp)
+                text, meta = self._extract_text_from_response(resp)
+                return text, meta
 
             return self._with_rate_limit_retry(_make_request)
 
         # Reset logprobs before each call
         self._last_logprobs = None
 
-        # When logprobs enabled, use the new google.genai SDK which supports logprobs
+        # When logprobs are enabled, streaming yields incomplete logprob data on
+        # the server side; use non-streaming only.
         if self.enable_logprobs:
-            def _logprobs_request(prompt_text: str, cap: int):
-                config = GenerateContentConfig(
-                    temperature=float(temperature),
-                    top_p=float(top_p),
-                    max_output_tokens=int(cap),
-                    response_logprobs=True,
-                    logprobs=self.logprobs_k,
-                )
-                resp = self._genai_client.models.generate_content(
-                    model=self.model_name,
-                    contents=prompt_text,
-                    config=config,
-                )
-                # Extract text
-                text = resp.text or ""
-                # Extract logprobs
-                self._last_logprobs = self._extract_logprobs(resp)
-                return text.strip()
-
-            def _try_logprobs():
-                return _logprobs_request(prompt, max_tokens)
-
             try:
-                text = self._with_rate_limit_retry(_try_logprobs)
+                text, _ = _call(stream=False, prompt_text=prompt, cap=max_tokens)
                 if text:
                     return self._apply_stop(text, stop)
-            except Exception as e:
+            except Exception:
                 pass
 
             # Short fallback
@@ -302,11 +297,7 @@ class GeminiPreferenceClient(BaseLLMClient):
                 else "Be concise. Keep output under 180 tokens.\n\n"
             ) + base_prompt
             small_cap = min(int(max_tokens), 512)
-
-            def _try_logprobs_fallback():
-                return _logprobs_request(tight_prompt, small_cap)
-
-            text2 = self._with_rate_limit_retry(_try_logprobs_fallback)
+            text2, _ = _call(stream=False, prompt_text=tight_prompt, cap=small_cap)
             if text2:
                 return self._apply_stop(text2, stop)
 
@@ -321,7 +312,7 @@ class GeminiPreferenceClient(BaseLLMClient):
             pass
 
         # Non-streaming
-        last_meta = {}
+        last_meta: Dict[str, Any] = {}
         try:
             text, meta = _call(stream=False, prompt_text=prompt, cap=max_tokens)
             if text:

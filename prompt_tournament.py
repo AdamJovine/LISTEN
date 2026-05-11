@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 
-from promptTemplate import PromptTemplateInterface, normalize_prompt_variant_config, PromptVariantMixin
+from prompt_template import PromptTemplateInterface, normalize_prompt_variant_config, PromptVariantMixin
 
 
 def _excel_column_label(n: int) -> str:
@@ -32,7 +32,7 @@ class ComparisonPromptTemplate(PromptTemplateInterface):
     Subclasses must still implement format() and get_base_prompt().
     """
 
-    MAX_HISTORY = 5  # Default max history items #TODO: make this a parameter
+    MAX_HISTORY = 5  # Class-level default; subclasses may override.
 
     def __init__(self, reasoning: bool = True, reasoning_history: bool = False, **kwargs):
         """

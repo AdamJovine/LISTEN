@@ -65,7 +65,7 @@ def load_canonical_human_sols() -> Dict[str, List[int]]:
     import yaml
     result: Dict[str, List[int]] = {}
     for scenario, (primary_mode, _base, cfg_file) in SCENARIOS.items():
-        with open(ROOT / "configs" / cfg_file) as f:
+        with open(ROOT / "configs" / cfg_file, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
         result[scenario] = cfg.get("modes", {}).get(primary_mode, {}).get("human_sol", [])
     return result

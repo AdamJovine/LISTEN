@@ -458,7 +458,7 @@ def test_from_json_copies_metadata_to_config():
         "algo": "TournamentExperiment",
         "meta": {
             "scenario": "exam",
-            "mode": "B2B",
+            "mode": "BASE",
             "api_model": "groq",
             "model_name": "llama-3.3-70b-versatile",
         },
@@ -470,7 +470,7 @@ def test_from_json_copies_metadata_to_config():
     algo = Experiment.from_json(data)
 
     assert algo.get_scenario() == "exam"
-    assert algo.get_mode() == "B2B"
+    assert algo.get_mode() == "BASE"
     assert algo.algo_config.get("api_model") == "groq"
     assert algo.algo_config.get("model_name") == "llama-3.3-70b-versatile"
 

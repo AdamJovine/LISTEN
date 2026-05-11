@@ -13,12 +13,14 @@ import yaml
 
 from baseline_algorithm import BaselineExperiment
 from full_batch_algorithm import FullBatchExperiment
-from gemini_client import GeminiPreferenceClient
-from groq_client import FreeLLMPreferenceClient
 from prompt_tournament import ComparisonPromptAdapter
 from prompt_utility import UtilityPromptTemplate
 from tournament_algorithm import TournamentExperiment
 from utility_algorithm import UtilityExperiment
+
+# LLM client modules are imported lazily inside create_client() so that
+# importing this module (e.g. from tests) does not require the SDKs to be
+# installed.
 
 REPO_ROOT = Path(__file__).resolve().parent
 
@@ -193,7 +195,7 @@ def _load_global_defaults() -> dict:
     cfg_path = cfg_dir / "config.yml"
     if not cfg_path.exists():
         return {}
-    with open(cfg_path, "r") as f:
+    with open(cfg_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 
@@ -212,7 +214,7 @@ def _find_scenario_yaml(scenario: str) -> Path:
 
 
 def _load_yaml(path: str) -> dict:
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -411,6 +413,8 @@ def _build_utility_prompt_template(config: Dict[str, Any]) -> UtilityPromptTempl
 def create_client(api_model: str, model_configs: dict):
     mc = dict(model_configs.get(api_model) or {})
     if api_model == "groq":
+        from groq_client import FreeLLMPreferenceClient
+
         return FreeLLMPreferenceClient(
             provider="groq",
             api_key=mc.get("api_key") or os.getenv(mc.get("api_key_env", "GROQ_API_KEY")),
@@ -421,6 +425,8 @@ def create_client(api_model: str, model_configs: dict):
             default_seed=mc.get("seed"),
         )
     if api_model == "gemini":
+        from gemini_client import GeminiPreferenceClient
+
         api_key = mc.get("api_key") or os.getenv(mc.get("api_key_env", "GEMINI_API_KEY")) or os.getenv("GOOGLE_API_KEY")
         if not api_key:
             raise ValueError("Gemini API key not found. Set GEMINI_API_KEY/GOOGLE_API_KEY or model_configs.gemini.api_key.")
@@ -489,7 +495,8 @@ def main():
     numeric_metric_columns = [c for c in config["metric_columns"] if c not in non_numeric]
     df = pd.read_csv(data_path).dropna(subset=numeric_metric_columns)
 
-    client = create_client(config["api_model"], config["model_configs"])
+    # Baseline is LLM-free, so skip client construction (no API key needed).
+    client = None if args.algo == "baseline" else create_client(config["api_model"], config["model_configs"])
 
     iterations = int(args.iterations or config.get("n_batches", 25))
     batch_size_default = config.get("tournament_batch_size", config.get("batch_size", 50))
