@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "LISTEN: An LLM Framework for Multi-Objective Selection"
+title: "LISTEN to Your Preferences: An LLM Framework for Multi-Objective Selection"
 message: "If you use this software, please cite the accompanying paper."
 type: software
 authors:
@@ -17,9 +17,6 @@ authors:
   - family-names: Wang
     given-names: Jingjing
     affiliation: Cornell University
-  - family-names: Ford
-    given-names: Matthew
-    affiliation: Cornell University
   - family-names: Shmoys
     given-names: David B.
     affiliation: Cornell University
@@ -28,7 +25,7 @@ authors:
     affiliation: Cornell University
 repository-code: "https://github.com/AdamJovine/LISTEN-IJCAI"
 preferred-citation:
-  type: conference-paper
+  type: article
   title: "LISTEN to Your Preferences: An LLM Framework for Multi-Objective Selection"
   authors:
     - family-names: Jovine
@@ -39,13 +36,10 @@ preferred-citation:
       given-names: Francis
     - family-names: Wang
       given-names: Jingjing
-    - family-names: Ford
-      given-names: Matthew
     - family-names: Shmoys
       given-names: David B.
     - family-names: Frazier
       given-names: Peter I.
-  conference:
-    name: "International Joint Conference on Artificial Intelligence (IJCAI)"
-  year: 2026
+  journal: "arXiv preprint arXiv:2510.25799"
+  year: 2025
   url: "https://arxiv.org/abs/2510.25799"
