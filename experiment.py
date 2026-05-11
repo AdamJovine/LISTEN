@@ -253,7 +253,7 @@ class Experiment(ABC):
     def from_json(source: "str | Path | Dict[str, Any]") -> "Experiment":
         import json
         if isinstance(source, (str, Path)):
-            with open(source) as f:
+            with open(source, encoding="utf-8") as f:
                 data = json.load(f)
         else:
             data = source
