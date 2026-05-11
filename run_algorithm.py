@@ -26,7 +26,14 @@ REPO_ROOT = Path(__file__).resolve().parent
 
 
 def get_git_info() -> Dict[str, Any]:
-    """Capture git state for reproducibility: commit hash, branch, dirty status."""
+    """Capture git state for reproducibility: commit hash, branch, dirty status.
+
+    The full dirty diff is *not* captured by default — it can contain in-progress
+    work, private notes, or other dev-only content that shouldn't ship in a
+    public results artifact. Set LISTEN_CAPTURE_GIT_DIFF=1 in the environment to
+    embed the truncated `git diff HEAD` text into the output JSON (legacy
+    behavior; useful when explicitly debugging a dirty-tree run).
+    """
     info: Dict[str, Any] = {
         "git_hash": None,
         "git_branch": None,
@@ -46,15 +53,16 @@ def get_git_info() -> Dict[str, Any]:
         info["git_dirty"] = bool(status)
         if status:
             info["git_dirty_files"] = status.splitlines()
-            try:
-                diff = subprocess.check_output(
-                    ["git", "diff", "HEAD"], cwd=REPO_ROOT, stderr=subprocess.DEVNULL,
-                ).decode()
-                if len(diff) > 50_000:
-                    diff = diff[:50_000] + "\n... (truncated)"
-                info["git_diff"] = diff
-            except Exception:
-                info["git_diff"] = None
+            if os.environ.get("LISTEN_CAPTURE_GIT_DIFF") == "1":
+                try:
+                    diff = subprocess.check_output(
+                        ["git", "diff", "HEAD"], cwd=REPO_ROOT, stderr=subprocess.DEVNULL,
+                    ).decode()
+                    if len(diff) > 50_000:
+                        diff = diff[:50_000] + "\n... (truncated)"
+                    info["git_diff"] = diff
+                except Exception:
+                    info["git_diff"] = None
     except FileNotFoundError:
         pass
     except subprocess.CalledProcessError:
