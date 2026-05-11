@@ -106,9 +106,6 @@
       },
       "default_mode": "REGISTRAR",
       "modes": {
-        "B2B": {
-          "prompt": ""
-        },
         "BASE": {
           "prompt": ""
         },
