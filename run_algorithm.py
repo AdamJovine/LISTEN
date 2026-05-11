@@ -124,6 +124,10 @@ def parse_args() -> argparse.Namespace:
         "--temperature", type=float,
         help="Override temperature for the active api-model.",
     )
+    ap.add_argument(
+        "--dry-run", action="store_true",
+        help="Print the resolved config + would-be output path, then exit without running.",
+    )
     return ap.parse_args()
 
 
@@ -490,14 +494,6 @@ def main():
     apply_overrides(config, args)
     resolve_mode(config, args.mode)
 
-    data_path = Path(__file__).resolve().parent / config["data_csv"]
-    non_numeric = set(config.get("non_numeric_metrics") or config.get("non_numerical_metrics") or [])
-    numeric_metric_columns = [c for c in config["metric_columns"] if c not in non_numeric]
-    df = pd.read_csv(data_path).dropna(subset=numeric_metric_columns)
-
-    # Baseline is LLM-free, so skip client construction (no API key needed).
-    client = None if args.algo == "baseline" else create_client(config["api_model"], config["model_configs"])
-
     iterations = int(args.iterations or config.get("n_batches", 25))
     batch_size_default = config.get("tournament_batch_size", config.get("batch_size", 50))
     batch_size = int(args.batch_size) if args.batch_size is not None else int(batch_size_default)
@@ -505,6 +501,54 @@ def main():
     mode_def = (config.get("modes") or {}).get(config.get("mode"), {})
     weights = mode_def.get("weights") or config.get("mode_weights") or config.get("weights") or {}
     human_sol = mode_def.get("human_sol") or config.get("human_sol") or []
+
+    if args.dry_run:
+        tag = config.get("tag") or Path(args.scenario).stem
+        run_stamp = args.run_stamp or datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        outdir_path = (
+            Path(args.output_root)
+            if args.output_root
+            else Path(__file__).resolve().parent / "outputs" / tag
+        )
+        api_model = config.get("api_model") or "api"
+        model_name = config.get("model_configs", {}).get(api_model, {}).get("model_name") or api_model
+        model_name_short = model_name.split("/")[-1]
+        output_file = build_output_filename(
+            scenario=tag,
+            algo=args.algo,
+            mode_name=config.get("mode") or "MODE",
+            api_model=api_model,
+            model_name_short=model_name_short,
+            seed=config.get("seed"),
+            run_stamp=run_stamp,
+            max_iters=iterations,
+            batch_size=batch_size,
+            comparison_settings=None,
+            base_output_dir=outdir_path,
+        )
+        print("[DRY-RUN] Resolved configuration:")
+        print(f"  scenario:     {tag}")
+        print(f"  algo:         {args.algo}")
+        print(f"  mode:         {config.get('mode')}")
+        print(f"  api_model:    {api_model}")
+        print(f"  model_name:   {model_name}")
+        print(f"  seed:         {config.get('seed')}")
+        print(f"  iterations:   {iterations}")
+        print(f"  batch_size:   {batch_size}")
+        print(f"  data_csv:     {config.get('data_csv')}")
+        print(f"  has_weights:  {bool(weights)}")
+        print(f"  n_human_sol:  {len(human_sol)}")
+        print(f"  output_file:  {output_file}")
+        print("[DRY-RUN] No experiment was run; exit 0.")
+        return
+
+    data_path = Path(__file__).resolve().parent / config["data_csv"]
+    non_numeric = set(config.get("non_numeric_metrics") or config.get("non_numerical_metrics") or [])
+    numeric_metric_columns = [c for c in config["metric_columns"] if c not in non_numeric]
+    df = pd.read_csv(data_path).dropna(subset=numeric_metric_columns)
+
+    # Baseline is LLM-free, so skip client construction (no API key needed).
+    client = None if args.algo == "baseline" else create_client(config["api_model"], config["model_configs"])
 
     if args.algo == "baseline":
         algo = BaselineExperiment(
