@@ -64,7 +64,7 @@ BASE_PAIRS=(
   "exam:BASE"
   "headphones:BASE"
 )
-HEADPHONES_STUDENT="headphones:SOFT"
+HEADPHONES_SOFT="headphones:SOFT"
 
 GROUP_STAMP="$(date -u +"%Y%m%d_%H%M%S")"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/outputs/paper__REPS${TARGET_REPS}__iters${ITERS}__seed${BASE_SEED}__${GROUP_STAMP}}"
@@ -235,7 +235,7 @@ submit_jobs "S1" "${S1_JOBS[@]}"
 echo "═══════════════════════════════════════════════════════════════════"
 echo "[SECTION 2] Headphones SOFT (tournament B=${MAIN_BATCH_SIZE}, utility)"
 echo "═══════════════════════════════════════════════════════════════════"
-IFS=":" read -r hp_scen hp_mode <<<"${HEADPHONES_STUDENT}"
+IFS=":" read -r hp_scen hp_mode <<<"${HEADPHONES_SOFT}"
 S2_JOBS=()
 for api in "${API_MODELS[@]}"; do
   S2_JOBS+=("tournament|${hp_scen}|${hp_mode}|${api}|${MAIN_BATCH_SIZE}|${DEFAULT_PROMPT}|${TARGET_REPS}")
