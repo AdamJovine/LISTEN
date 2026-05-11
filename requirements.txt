@@ -1,7 +1,0 @@
-numpy
-pandas
-matplotlib
-PyYAML
-google-genai
-groq
-pytest

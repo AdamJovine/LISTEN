@@ -16,14 +16,16 @@ algorithms are included: `tournament` (LISTEN-T), `utility` (LISTEN-U),
 ├── *_algorithm.py          # tournament, utility, baseline, full_batch
 ├── base_client.py          # Abstract LLM client
 ├── groq_client.py          # Groq API client
-├── gemini_client.py        # Gemini / Vertex AI client
-├── promptTemplate.py       # Abstract prompt template
+├── gemini_client.py        # Gemini / Vertex AI client (google.genai SDK)
+├── prompt_template.py      # Abstract prompt template
 ├── prompt_tournament.py    # Comparison prompt (tournament + full_batch)
 ├── prompt_utility.py       # Weight-elicitation prompt (utility)
 ├── configs/                # Global + per-scenario YAML configs
 ├── input/                  # CSV data for each scenario + human-rerank rankings
 ├── plotting/               # Figure-generation scripts
+├── post_analysis/          # Concordance metric (paper §4.1) + sweep helpers
 ├── scripts/                # Bash drivers for paper experiments
+├── tools/                  # One-shot helpers (e.g. legacy-output rename)
 └── tests/                  # pytest suite
 ```
 
@@ -34,11 +36,9 @@ conda env create -f environment.yml
 conda activate listen
 ```
 
-or with pip:
-
-```bash
-pip install -r requirements.txt
-```
+`environment.yml` is the single source of truth for dependencies. There is
+no separate `requirements.txt`; if you need a pip-only install, mirror the
+package list from `environment.yml`.
 
 ## 2) API keys
 
@@ -50,8 +50,10 @@ GEMINI_API_KEY="<your_gemini_key>"
 GOOGLE_API_KEY="<your_google_key>"   # alias accepted for Gemini
 ```
 
-Gemini is read via Google's `generativeai` SDK; both `GEMINI_API_KEY` and
-`GOOGLE_API_KEY` are honoured.
+Gemini is accessed via the `google-genai` SDK (the legacy
+`google-generativeai` package is end-of-life and no longer used). Both
+`GEMINI_API_KEY` and `GOOGLE_API_KEY` are honoured. Vertex AI is used only
+when logprobs are explicitly requested.
 
 ## 3) Scenarios
 
@@ -67,6 +69,16 @@ each with a canonical mode:
 
 Each config also defines a `BASE` mode (no preference utterance) used in the
 preference-utterance ablation, and `headphones` additionally defines `SOFT`.
+
+Mapping to paper terminology:
+
+| Paper name                  | Code path                                |
+|-----------------------------|------------------------------------------|
+| Exam Scheduling             | `exam` / `REGISTRAR`                     |
+| Flights CHI→NYC             | `flights_chi_nyc` / `Complicated_structured` |
+| Flights Ithaca→Reston       | `flights_ithaca_reston` / `Complicated`  |
+| Headphones                  | `headphones` / `MAIN`                    |
+| Headphones-Soft (§4.5)      | `headphones` / `SOFT`                    |
 
 ## 4) Single run
 
@@ -100,6 +112,7 @@ Common flags:
 | `--unique-rank-batch` | Ensure each tournament batch contains at least one `human_sol` index |
 | `--comparison-prompt-{strategy,variant,seed}` | Override comparison prompt selection (tournament/full_batch) |
 | `--utility-prompt-{strategy,variant,seed}`    | Override utility prompt selection (utility) |
+| `--dry-run`         | Print resolved config + would-be output path, then exit (no LLM calls) |
 
 Each run writes a single JSON to
 `outputs/<scenario>/<scenario>__<algo>__<mode>__api<...>__<...>.json`
@@ -206,7 +219,7 @@ If you use this code, please cite the paper:
 ```bibtex
 @article{jovine2025listen,
   title={LISTEN to Your Preferences: An LLM Framework for Multi-Objective Selection},
-  author={Jovine, Adam S and Ye, Tinghan and Bahk, Francis and Wang, Jingjing and Shmoys, David B and Frazier, Peter I},
+  author={Jovine, Adam S and Ye, Tinghan and Bahk, Francis and Wang, Jingjing and Ford, Matthew and Shmoys, David B and Frazier, Peter I},
   journal={arXiv preprint arXiv:2510.25799},
   year={2025}
 }
