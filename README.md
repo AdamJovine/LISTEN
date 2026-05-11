@@ -169,3 +169,50 @@ pytest tests/
 
 The suite covers the experiment base class, scoring/NAR helpers, JSON
 serialization round-trip, and the tournament output format.
+
+## 8) Concordance analysis
+
+The dataset diagnostic from §4.1 of the paper — concordance, the fraction
+of random linear utility functions whose argmax lands in the
+human-curated `human_sol` set — is implemented in
+[`post_analysis/concordance_analysis.py`](post_analysis/concordance_analysis.py).
+
+Per-pair:
+
+```bash
+python post_analysis/concordance_analysis.py \
+  --scenario headphones --mode STUDENT_HARD \
+  --n-samples 10000 --random-seed 42
+```
+
+Full sweep over every (scenario, mode) pair with a `human_sol`:
+
+```bash
+bash post_analysis/run_concordance_analysis.sh
+# or, single-process:
+python post_analysis/concordance_analysis.py --n-samples 10000 --random-seed 42 \
+  --output post_analysis/concordance_results_n10000.csv
+```
+
+A reference sweep at n=10,000, seed=42 is checked in at
+[`post_analysis/concordance_results_n10000.csv`](post_analysis/concordance_results_n10000.csv).
+
+## 9) Citation
+
+If you use this code, please cite the paper:
+
+```bibtex
+@article{jovine2025listen,
+  title={LISTEN to Your Preferences: An LLM Framework for Multi-Objective Selection},
+  author={Jovine, Adam S and Ye, Tinghan and Bahk, Francis and Wang, Jingjing and Shmoys, David B and Frazier, Peter I},
+  journal={arXiv preprint arXiv:2510.25799},
+  year={2025}
+}
+```
+
+A machine-readable [`CITATION.cff`](CITATION.cff) is also provided; GitHub
+renders it as a "Cite this repository" button on the repo page.
+
+## 10) License
+
+[MIT](LICENSE).
