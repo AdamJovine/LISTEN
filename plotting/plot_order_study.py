@@ -198,7 +198,7 @@ def write_plot(
     ax.set_xticks(x)
     ax.set_xticklabels(x_labels)
     ax.set_ylabel("NAR (mean +/- 2 SE)")
-    ax.legend(fontsize=8, loc="upper left")
+    ax.legend(fontsize=14, loc="upper left")
     ax.set_ylim(bottom=0)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)

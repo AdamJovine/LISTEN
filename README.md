@@ -1,7 +1,7 @@
-# LISTEN — Reproducibility code (IJCAI submission)
+# LISTEN — Reproducibility code
 
 This repository contains the code and configuration files needed to reproduce
-the experiments and figures in our IJCAI paper. Two LLM APIs are supported:
+the experiments and figures in the LISTEN paper. Two LLM APIs are supported:
 **Groq** (Llama 3.3 70B) and **Google Gemini** (via Vertex AI). Four
 algorithms are included: `tournament` (LISTEN-T), `utility` (LISTEN-U),
 `baseline` (random + z-score variants), and `full_batch`.
@@ -57,8 +57,8 @@ when logprobs are explicitly requested.
 
 ## 3) Scenarios
 
-Each scenario lives in `configs/<scenario>.yml`. The paper uses these four,
-each with a canonical mode:
+Each scenario lives in `configs/<scenario>.yml`. The paper uses these four
+scenarios, each with a canonical mode:
 
 | Scenario     | Canonical mode             | Data file                                                |
 |--------------|----------------------------|----------------------------------------------------------|
@@ -121,45 +121,54 @@ the resolved config.
 
 ## 5) Reproducing the paper
 
-A single script — `scripts/paper_recreate.sh` — does all runs and produces
-all plots, for both LLM APIs (groq and gemini). Linux/macOS only (uses
-bash-only features like `xargs -P` and `mktemp -t`); on Windows, run it
-under WSL or invoke `run_algorithm.py` directly per the §4 example.
+Two top-level driver scripts reproduce the published results. Both are
+Linux/macOS only (they use bash-only features like `xargs -P` and `mktemp -t`);
+on Windows, run them under WSL or invoke `run_algorithm.py` directly per the
+§4 example.
+
+| Script                       | Reproduces                                   |
+|------------------------------|----------------------------------------------|
+| `scripts/IJCAI_recreate.sh`  | The runs and plots for the IJCAI submission. |
+| `scripts/arXiv_recreate.sh`  | The runs and plots for the arXiv version.    |
+
+Run either script from the repository root:
 
 ```bash
-bash scripts/paper_recreate.sh
+bash scripts/IJCAI_recreate.sh
+# or
+bash scripts/arXiv_recreate.sh
 ```
 
-Optional env overrides:
+Optional env overrides accepted by both scripts:
 
 ```bash
 TARGET_REPS=40 ITERS=25 BASE_SEED=1234 JOBS=4 \
 OUTPUT_ROOT=outputs/<existing-run>      # set to resume an in-progress run
-bash scripts/paper_recreate.sh
+bash scripts/IJCAI_recreate.sh
 ```
 
-Output layout:
+| Variable       | Purpose                                                            |
+|----------------|--------------------------------------------------------------------|
+| `TARGET_REPS`  | Successful repetitions per cell of the experiment grid             |
+| `ITERS`        | LLM calls per run (`--iterations`)                                 |
+| `BASE_SEED`    | Seed for the first replicate; later replicates use `BASE_SEED + i` |
+| `JOBS`         | Parallelism for `xargs -P`                                         |
+| `OUTPUT_ROOT`  | Existing run directory to resume into (default: timestamped path)  |
+
+Output layout (timestamp/stamp matches the run):
 
 ```
 outputs/paper__REPS40__iters25__seed1234__<stamp>/
-├── exam/        all exam runs (every algo / mode / batch / prompt variant)
-├── flights_chi_nyc/    all flights_chi_nyc runs
-├── flights_ithaca_reston/    all flights_ithaca_reston runs
-├── headphones/  all headphones runs
-└── plots/       the five paper plots + CSV tables
+├── exam/                       all exam runs (every algo / mode / batch / prompt variant)
+├── flights_chi_nyc/            all flights_chi_nyc runs
+├── flights_ithaca_reston/      all flights_ithaca_reston runs
+├── headphones/                 all headphones runs
+└── plots/                      generated plots + CSV tables
 ```
 
-The script runs five sections, each with a retry-until-target loop:
-
-| § | What it runs | Reps |
-|---|---|---|
-| 1 | Tournament × B={2,4,8,16,32} × {flights_ithaca_reston:Complicated, flights_chi_nyc:Complicated_structured, exam:REGISTRAR, headphones:MAIN} × {groq, gemini}, default prompt `header_then_task_v1` | 40 each |
-| 2 | Tournament @ B=8 + utility × headphones:SOFT × {groq, gemini} | 40 each |
-| 3 | Utility / baseline / full_batch × 4 canonical pairs × {groq, gemini} | 40 each |
-| 4 | Tournament @ B=32 + utility × 4 canonical pairs × `task_then_header_v1` × {groq, gemini} (reverse-prompt set for the order study) | 40 each |
-| 5 | Tournament @ B=32 + utility × {flights_ithaca_reston:BASE, flights_chi_nyc:BASE, exam:BASE, headphones:BASE} × {groq, gemini} (preference-utterance ablation) | 40 each |
-
-Section 6 then generates all five paper plots into `<OUTPUT_ROOT>/plots/`.
+Each script runs the experiment grid as a sequence of sections, each with a
+retry-until-target loop, and then generates the corresponding paper plots
+into `<OUTPUT_ROOT>/plots/`.
 
 ## 6) Plots
 

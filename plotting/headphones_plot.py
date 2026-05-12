@@ -162,7 +162,7 @@ def headphones_plot(args: argparse.Namespace):
     plt.ylabel("Normalized Average Rank (mean +/- 2SE)")
     plt.ylim(0, max(tournament_heights + utility_heights) * 1.25)
     plt.grid(True, axis="y", alpha=0.3)
-    plt.legend()
+    plt.legend(fontsize=14)
 
     # Use args without algo/mode filter for output path; batch_size=8 always (LISTEN-T filter)
     args_no_algo = copy(args)
@@ -309,7 +309,7 @@ def layout_comparison_plot(args: argparse.Namespace):
                     annotation_clip=False)
     ax.set_ylabel("Normalized Average Rank (mean +/- 2SE)")
     ax.grid(True, axis="y", alpha=0.3)
-    ax.legend()
+    ax.legend(fontsize=14)
     ax.set_ylim(bottom=0)
     fig.tight_layout()
 

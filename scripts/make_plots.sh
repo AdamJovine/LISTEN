@@ -37,17 +37,15 @@ echo "═══ [PLOT 1] Per-scenario × batch sizes (tournament) ═══"
   --y nar \
   || echo "[WARN] PLOT 2 failed"
 
-# Plot 2: Cross-scenario aggregate (tournament @ B=MAIN_BATCH_SIZE) per api
-echo "═══ [PLOT 2] Cross-scenario × tournament @ B=${MAIN_BATCH_SIZE} ═══"
-"${PYTHON_BIN}" "${REPO_ROOT}/plotting/general_plot.py" \
-  --path "${OUTPUT_ROOT}" \
+# Plot 2: Cross-scenario × algo @ B=MAIN_BATCH_SIZE, default section order
+# (one aggregate point per algo per column).
+echo "═══ [PLOT 2] Cross-scenario × algo @ B=${MAIN_BATCH_SIZE}, default order ═══"
+"${PYTHON_BIN}" "${REPO_ROOT}/plotting/plot_orders_by_algo.py" \
+  --data-dir "${OUTPUT_ROOT}" \
   --output-dir "${PLOT_DIR}" \
-  --x_large api_model all \
-  --x_medium scenario all \
-  --x_small algo all \
-  --y nar \
-  --canonical_mode \
-  --per_algo_filter tournament batch_size "${MAIN_BATCH_SIZE}" \
+  --batch-size "${MAIN_BATCH_SIZE}" \
+  --section-order "persona,attributes,priorities" \
+  --aggregate-orders \
   || echo "[WARN] PLOT 2 failed"
 
 # Plot 2b: Cross-scenario × algo, one sub-point per section_order
