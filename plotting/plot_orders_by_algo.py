@@ -40,6 +40,17 @@ COLUMNS: List[Tuple[str, str, str, str]] = [
     ("exam",                  "exam",                  "REGISTRAR",              "Exam Scheduling"),
 ]
 
+# Canonical section-order numbering — matches the SECTION_ORDERS list in
+# scripts/paper_recreate.sh so the index labels on the orders plot are stable.
+SECTION_ORDER_INDEX: Dict[Tuple[str, ...], int] = {
+    ("persona", "attributes", "priorities"):  1,
+    ("persona", "priorities", "attributes"):  2,
+    ("attributes", "persona", "priorities"):  3,
+    ("attributes", "priorities", "persona"):  4,
+    ("priorities", "persona", "attributes"):  5,
+    ("priorities", "attributes", "persona"):  6,
+}
+
 # Display order for algo columns within each scenario.
 ALGO_COLUMNS = ["tournament", "utility", "full_batch", "baseline_random", "baseline_zscore", "human_rerank"]
 ALGO_DISPLAY = {
@@ -273,15 +284,14 @@ def plot_one_api(
                     linewidth=0, elinewidth=1.2,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
                 )
-                ax.annotate(f"n={len(vals)}", (x_algo[si], mu + err),
-                            textcoords="offset points", xytext=(0, 5),
-                            ha="center", fontsize=7, color=color)
                 legend_handles.setdefault(algo, True)
                 continue
 
-            # Gather all section_orders present for this (col_id, algo)
+            # Gather all section_orders present for this (col_id, algo).
+            # Sort by canonical SECTION_ORDER_INDEX so points lay out left->right
+            # as orders 1..6.
             orders = sorted([so for (c, a, so) in data if c == col_id and a == algo and data[(c, a, so)]],
-                            key=lambda t: ",".join(t) if t else "")
+                            key=lambda t: SECTION_ORDER_INDEX.get(t, 99))
             if not orders:
                 continue
             n_sub = len(orders)
@@ -296,9 +306,16 @@ def plot_one_api(
                     linewidth=0, elinewidth=1.0, alpha=0.85,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
                 )
-                ax.annotate(f"n={len(vals)}", (xi, mu + err),
-                            textcoords="offset points", xytext=(0, 5),
-                            ha="center", fontsize=7, color=color)
+                idx = SECTION_ORDER_INDEX.get(so) if so is not None else None
+                if idx is not None:
+                    ax.annotate(str(idx), (xi, mu + err),
+                                textcoords="offset points", xytext=(0, 5),
+                                ha="center", fontsize=9, fontweight="bold", color=color)
+                elif so is None:
+                    # Aggregated mode (no section_order) — show n= so the count is legible.
+                    ax.annotate(f"n={len(vals)}", (xi, mu + err),
+                                textcoords="offset points", xytext=(0, 5),
+                                ha="center", fontsize=7, color=color)
                 legend_handles.setdefault(algo, True)
 
     ax.set_xticks(x_centers)
@@ -307,7 +324,23 @@ def plot_one_api(
     ax.set_ylim(bottom=0)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
     ax.legend(fontsize=14, loc="upper left", title=None)
-    fig.tight_layout()
+
+    # When the plot uses section-order indices, append a footer explaining 1..6.
+    needs_key = any(
+        so is not None and SECTION_ORDER_INDEX.get(so) is not None
+        for (_c, _a, so) in data
+        if data[(_c, _a, so)]
+    )
+    if needs_key:
+        key_lines = "    ".join(
+            f"{idx}: {','.join(order)}"
+            for order, idx in sorted(SECTION_ORDER_INDEX.items(), key=lambda kv: kv[1])
+        )
+        fig.text(0.5, 0.01, key_lines, ha="center", fontsize=8, color="#444")
+        fig.tight_layout(rect=(0, 0.04, 1, 1))
+    else:
+        fig.tight_layout()
+
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
     print(f"Saved -> {out_path}")

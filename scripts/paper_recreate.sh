@@ -6,7 +6,10 @@
 # that scenario. Sections distinguish runs by metadata, not folder.
 #
 # Sections (run in order; resume-by-meta dedups completed work):
-#   0. Non-tournament: utility + baseline + full_batch, 9 pairs * 40 reps per api.
+#   0. Non-tournament:
+#        - utility (LISTEN-U): 6 section orders * 9 pairs * 40 reps per api
+#        - baseline: 9 pairs * 40 reps per api (prompt-agnostic, no order sweep)
+#        - full_batch: 9 pairs * 40 reps per api at the default order
 #      Groq + gemini lanes execute in parallel.
 #   1. Tournament section-order sweep @ B=32, 6 orders * 9 pairs * 40 reps per api.
 #   2. Tournament batch-size sweep, 4 canonical pairs * {2,4,8,16,32} * 40 reps per api.
@@ -243,16 +246,21 @@ submit_jobs() {
 # Runs first; groq and gemini lanes execute in parallel (per-API rate limits
 # are independent) so LISTEN-U / baseline / full_batch series populate quickly.
 echo "═══════════════════════════════════════════════════════════════════"
-echo "[SECTION 0] Non-tournament: utility + baseline + full_batch, 9 pairs × ${TARGET_REPS} reps × 2 apis"
+echo "[SECTION 0] Non-tournament: utility (6 orders) + baseline + full_batch, 9 pairs × ${TARGET_REPS} reps × 2 apis"
 echo "═══════════════════════════════════════════════════════════════════"
 S0_JOBS=()
 for api in "${API_MODELS[@]}"; do
   for pair in "${ALL_PAIRS[@]}"; do
     IFS=":" read -r scen mode <<<"${pair}"
-    S0_JOBS+=("utility|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${DEFAULT_ORDER}|${TARGET_REPS}")
+    # Utility sweeps all 6 section orders so LISTEN-U has matching order-by-order
+    # data for the cross-scenario / order plots.
+    for so in "${SECTION_ORDERS[@]}"; do
+      S0_JOBS+=("utility|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${so}|${TARGET_REPS}")
+    done
     # Baseline reps stay at BASELINE_REPS to sample BaselineRandom; zscore_winner
     # is deterministic so duplicate zscore data is nulled out by dedupe_zscore.py
-    # after the section completes (see below).
+    # after the section completes (see below). Baseline is prompt-agnostic so
+    # it does not vary by section_order.
     S0_JOBS+=("baseline|${scen}|${mode}|${api}||||${BASELINE_REPS}")
     S0_JOBS+=("full_batch|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${DEFAULT_ORDER}|${TARGET_REPS}")
   done
