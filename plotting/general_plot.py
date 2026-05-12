@@ -189,12 +189,11 @@ def plot_aggregated(
                                xytext=(0, 8), ha="center", fontsize=6, color=color or "black")
         ax.set_xticks(x_centers)
         ax.set_xticklabels(x_labels)
-        ax.legend(title=get_field_display_name(group_field) if group_field else None)
+        ax.legend(fontsize=14, title=get_field_display_name(group_field) if group_field else None, title_fontsize=14)
 
     ax.grid(True, axis='y', linestyle=':', linewidth=0.5, color='gray', alpha=0.5)
     ax.set_xlabel(get_field_display_name(x_field))
     ax.set_ylabel(get_metric_display_name(y_metric))
-    ax.set_title(title)
     plt.tight_layout()
 
     plt.savefig(output_path, dpi=150)
