@@ -6,13 +6,14 @@
 # that scenario. Sections distinguish runs by metadata, not folder.
 #
 # Sections (run in order; resume-by-meta dedups completed work):
-#   0a. Non-tournament @ groq:   utility + baseline + full_batch, 9 pairs * 40 reps.
-#   0b. Non-tournament @ gemini: same as 0a but api=gemini (waits for 0a to finish).
-#   1.  Tournament section-order sweep @ B=32, 6 orders * 9 pairs * 40 reps per api.
-#   2.  Tournament batch-size sweep, 4 canonical pairs * {2,4,8,16,32} * 40 reps per api.
+#   0. Non-tournament: utility + baseline + full_batch, 9 pairs * 40 reps per api.
+#      Groq + gemini lanes execute in parallel.
+#   1. Tournament section-order sweep @ B=32, 6 orders * 9 pairs * 40 reps per api.
+#   2. Tournament batch-size sweep, 4 canonical pairs * {2,4,8,16,32} * 40 reps per api.
 #
-# Section 0 runs before tournament so the non-tournament series populate quickly;
-# within section 0, groq finishes before gemini starts.
+# Section 0 runs before tournament so non-tournament series populate fast.
+# JOBS controls concurrency *within* each API lane (default 1); lanes for
+# distinct api_models always run concurrently regardless of JOBS.
 #
 # Usage:
 #   bash scripts/paper_recreate.sh
@@ -172,6 +173,10 @@ export OUTPUT_ROOT GROUP_STAMP RUN_ALGO PYTHON_BIN BASE_SEED ITERS
 
 # Submit a list of jobs and retry until each reaches its target rep count.
 # Each spec is "algo|scenario|mode|api|batch_size|prompt_variant|section_order|target_reps".
+#
+# Jobs are partitioned by api_model into per-API lanes. Each lane runs at
+# concurrency JOBS (default 1) and the lanes run *in parallel*, so groq and
+# gemini progress simultaneously while each respects its own rate limit.
 BASE_SEED_OFFSET=0
 submit_jobs() {
   local section_name="$1"; shift
@@ -179,7 +184,7 @@ submit_jobs() {
   local round=0
   while true; do
     round=$((round + 1))
-    local pending=()
+    declare -A pending_by_api=()
     local serial_pending=()
     local all_done=true
 
@@ -194,10 +199,11 @@ submit_jobs() {
       for ((i=0; i<remaining; i++)); do
         local seed_offset=${BASE_SEED_OFFSET}
         BASE_SEED_OFFSET=$((BASE_SEED_OFFSET + 1))
+        local job="${algo}|${scen}|${mode}|${api}|${bs}|${pv}|${so}|${seed_offset}"
         if [[ "${algo}" == "full_batch" ]]; then
-          serial_pending+=("${algo}|${scen}|${mode}|${api}|${bs}|${pv}|${so}|${seed_offset}")
+          serial_pending+=("${job}")
         else
-          pending+=("${algo}|${scen}|${mode}|${api}|${bs}|${pv}|${so}|${seed_offset}")
+          pending_by_api[$api]+="${job}"$'\n'
         fi
       done
     done
@@ -208,13 +214,21 @@ submit_jobs() {
       break
     fi
 
-    if [[ ${#pending[@]} -gt 0 ]]; then
-      printf '%s\n' "${pending[@]}" | xargs -n1 -P"${JOBS}" bash -c '
-        IFS="|" read -r algo scen mode api bs pv so seed_off <<<"$0"
-        run_one "${algo}" "${scen}" "${mode}" "${api}" "${seed_off}" "${bs}" "${pv}" "${so}" \
-          || echo "[WARN] job failed: ${algo}/${scen}/${mode}/${api}/B${bs}/${pv}/[${so}]/seed${seed_off}"
-      '
-    fi
+    local pids=()
+    for api in "${!pending_by_api[@]}"; do
+      local payload="${pending_by_api[$api]}"
+      [[ -z "${payload}" ]] && continue
+      (
+        printf '%s' "${payload}" | xargs -n1 -P"${JOBS}" bash -c '
+          IFS="|" read -r algo scen mode api bs pv so seed_off <<<"$0"
+          run_one "${algo}" "${scen}" "${mode}" "${api}" "${seed_off}" "${bs}" "${pv}" "${so}" \
+            || echo "[WARN] job failed: ${algo}/${scen}/${mode}/${api}/B${bs}/${pv}/[${so}]/seed${seed_off}"
+        '
+      ) &
+      pids+=($!)
+    done
+    for pid in "${pids[@]}"; do wait "${pid}" || true; done
+
     if [[ ${#serial_pending[@]} -gt 0 ]]; then
       for job in "${serial_pending[@]}"; do
         IFS="|" read -r algo scen mode api bs pv so seed_off <<<"${job}"
@@ -226,35 +240,21 @@ submit_jobs() {
 }
 
 # ─── Section 0: Non-tournament (utility / baseline / full_batch) ────────────
-# Runs first, with groq finishing completely before gemini starts, so the
-# user can plot LISTEN-U / baseline / full_batch series without waiting on
-# the long tournament sweeps.
-build_non_tournament_jobs() {
-  local api="$1"
-  local out_var="$2"
-  local -a jobs=()
+# Runs first; groq and gemini lanes execute in parallel (per-API rate limits
+# are independent) so LISTEN-U / baseline / full_batch series populate quickly.
+echo "═══════════════════════════════════════════════════════════════════"
+echo "[SECTION 0] Non-tournament: utility + baseline + full_batch, 9 pairs × ${TARGET_REPS} reps × 2 apis"
+echo "═══════════════════════════════════════════════════════════════════"
+S0_JOBS=()
+for api in "${API_MODELS[@]}"; do
   for pair in "${ALL_PAIRS[@]}"; do
     IFS=":" read -r scen mode <<<"${pair}"
-    jobs+=("utility|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${DEFAULT_ORDER}|${TARGET_REPS}")
-    jobs+=("baseline|${scen}|${mode}|${api}||||${BASELINE_REPS}")
-    jobs+=("full_batch|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${DEFAULT_ORDER}|${TARGET_REPS}")
+    S0_JOBS+=("utility|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${DEFAULT_ORDER}|${TARGET_REPS}")
+    S0_JOBS+=("baseline|${scen}|${mode}|${api}||||${BASELINE_REPS}")
+    S0_JOBS+=("full_batch|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${DEFAULT_ORDER}|${TARGET_REPS}")
   done
-  eval "${out_var}=(\"\${jobs[@]}\")"
-}
-
-echo "═══════════════════════════════════════════════════════════════════"
-echo "[SECTION 0a] Non-tournament @ groq: utility + baseline + full_batch, 9 pairs × ${TARGET_REPS} reps"
-echo "═══════════════════════════════════════════════════════════════════"
-S0A_JOBS=()
-build_non_tournament_jobs "groq" S0A_JOBS
-submit_jobs "S0a" "${S0A_JOBS[@]}"
-
-echo "═══════════════════════════════════════════════════════════════════"
-echo "[SECTION 0b] Non-tournament @ gemini: utility + baseline + full_batch, 9 pairs × ${TARGET_REPS} reps"
-echo "═══════════════════════════════════════════════════════════════════"
-S0B_JOBS=()
-build_non_tournament_jobs "gemini" S0B_JOBS
-submit_jobs "S0b" "${S0B_JOBS[@]}"
+done
+submit_jobs "S0" "${S0_JOBS[@]}"
 
 # ─── Section 1: Section-order sweep at B=32 ─────────────────────────────────
 echo "═══════════════════════════════════════════════════════════════════"
