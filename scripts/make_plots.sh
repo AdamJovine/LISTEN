@@ -50,6 +50,14 @@ echo "═══ [PLOT 2] Cross-scenario × tournament @ B=${MAIN_BATCH_SIZE} ═
   --per_algo_filter tournament batch_size "${MAIN_BATCH_SIZE}" \
   || echo "[WARN] PLOT 2 failed"
 
+# Plot 2b: Cross-scenario × algo, one sub-point per section_order
+echo "═══ [PLOT 2b] Cross-scenario × algo × section_order @ B=${MAIN_BATCH_SIZE} ═══"
+"${PYTHON_BIN}" "${REPO_ROOT}/plotting/plot_orders_by_algo.py" \
+  --data-dir "${OUTPUT_ROOT}" \
+  --output-dir "${PLOT_DIR}" \
+  --batch-size "${MAIN_BATCH_SIZE}" \
+  || echo "[WARN] PLOT 2b failed"
+
 # Plot 3: BASE vs canonical mode (tournament traces only; utility absent)
 # Pinned to B=32 + default section order so each bar averages exactly 40 reps
 # of one configuration, isolating the BASE-vs-canonical effect.

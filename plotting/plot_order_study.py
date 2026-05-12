@@ -198,7 +198,6 @@ def write_plot(
     ax.set_xticks(x)
     ax.set_xticklabels(x_labels)
     ax.set_ylabel("NAR (mean +/- 2 SE)")
-    ax.set_title("Prompt Order Study: Header-then-Task vs Task-then-Header")
     ax.legend(fontsize=8, loc="upper left")
     ax.set_ylim(bottom=0)
     fig.tight_layout()

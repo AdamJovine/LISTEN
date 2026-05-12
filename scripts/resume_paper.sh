@@ -14,5 +14,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 unset GEMINI_API_KEY GOOGLE_API_KEY GROQ_API_KEY
 
-OUTPUT_ROOT="/Users/adamjovine/Documents/IJCAI/LISTEN-IJCAI/outputs/paper__REPS40__iters25__seed1234__20260511_163727" \
-  exec bash "${SCRIPT_DIR}/paper_recreate.sh"
+OUTPUT_ROOT="/Users/adamjovine/Documents/IJCAI/LISTEN-IJCAI/outputs/paper__REPS40__iters25__seed1234__20260511_163727"
+
+echo "[dedupe] cleaning duplicate baseline zscore_winner entries before resume"
+python "${SCRIPT_DIR}/dedupe_zscore.py" "${OUTPUT_ROOT}" || \
+  echo "[WARN] dedupe_zscore.py failed (continuing)"
+
+OUTPUT_ROOT="${OUTPUT_ROOT}" exec bash "${SCRIPT_DIR}/paper_recreate.sh"

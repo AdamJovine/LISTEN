@@ -194,7 +194,6 @@ def plot_aggregated(
     ax.grid(True, axis='y', linestyle=':', linewidth=0.5, color='gray', alpha=0.5)
     ax.set_xlabel(get_field_display_name(x_field))
     ax.set_ylabel(get_metric_display_name(y_metric))
-    ax.set_title(title)
     plt.tight_layout()
 
     plt.savefig(output_path, dpi=150)

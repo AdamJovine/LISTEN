@@ -173,14 +173,24 @@ def write_plot(
     n_scenarios = len(scenarios)
     x = np.arange(n_scenarios)
 
-    series_keys = [f"{kind} / {a}" for a in ALGOS for kind in MODE_KINDS] + ["human rerank"]
-    n_series = len(series_keys)
+    all_series_keys = [f"{kind} / {a}" for a in ALGOS for kind in MODE_KINDS] + ["human rerank"]
+
+    def _series_total(key: str) -> int:
+        src = rerank_data if key == "human rerank" else plot_data.get(key, {})
+        return sum(len(src.get(sc, [])) for sc in scenarios)
+
+    visible_keys = [k for k in all_series_keys if _series_total(k) > 0]
+    skipped = [k for k in all_series_keys if k not in visible_keys]
+    if skipped:
+        print(f"[skip empty series] {skipped}")
+
+    n_series = len(visible_keys)
     spread = 0.12
     offsets = np.linspace(-spread * (n_series - 1) / 2, spread * (n_series - 1) / 2, n_series)
 
     fig, ax = plt.subplots(figsize=(10, 5.5))
 
-    for i, key in enumerate(series_keys):
+    for i, key in enumerate(visible_keys):
         color, marker = SERIES_STYLE[key]
         is_rerank = key == "human rerank"
         src = rerank_data if is_rerank else plot_data.get(key, {})
@@ -188,7 +198,10 @@ def write_plot(
         means, errs, counts = [], [], []
         for sc in scenarios:
             vals = src.get(sc, [])
-            mu, err = mean_and_2se(vals)
+            if vals:
+                mu, err = mean_and_2se(vals)
+            else:
+                mu, err = float("nan"), float("nan")
             means.append(mu)
             errs.append(err)
             counts.append(len(vals))
@@ -215,8 +228,6 @@ def write_plot(
     ax.set_xticks(x)
     ax.set_xticklabels(x_labels)
     ax.set_ylabel("NAR (mean +/- 2 SE)")
-    ax.set_title("no-preference vs with preference utterance\n"
-                 "circle = with preference utterance, square = no-preference")
     ax.legend(fontsize=8, loc="upper left")
     ax.set_ylim(bottom=0)
     fig.tight_layout()

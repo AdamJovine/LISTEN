@@ -250,11 +250,18 @@ for api in "${API_MODELS[@]}"; do
   for pair in "${ALL_PAIRS[@]}"; do
     IFS=":" read -r scen mode <<<"${pair}"
     S0_JOBS+=("utility|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${DEFAULT_ORDER}|${TARGET_REPS}")
+    # Baseline reps stay at BASELINE_REPS to sample BaselineRandom; zscore_winner
+    # is deterministic so duplicate zscore data is nulled out by dedupe_zscore.py
+    # after the section completes (see below).
     S0_JOBS+=("baseline|${scen}|${mode}|${api}||||${BASELINE_REPS}")
     S0_JOBS+=("full_batch|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${DEFAULT_ORDER}|${TARGET_REPS}")
   done
 done
 submit_jobs "S0" "${S0_JOBS[@]}"
+
+echo "[dedupe] nulling duplicate zscore_winner entries in baseline JSONs"
+"${PYTHON_BIN}" "${SCRIPT_DIR}/dedupe_zscore.py" "${OUTPUT_ROOT}" || \
+  echo "[WARN] dedupe_zscore.py failed (continuing)"
 
 # ─── Section 1: Section-order sweep at B=32 ─────────────────────────────────
 echo "═══════════════════════════════════════════════════════════════════"
