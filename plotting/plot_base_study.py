@@ -85,16 +85,25 @@ def mean_and_2se(vals: List[float]) -> Tuple[float, float]:
     return mu, 2 * math.sqrt(var / n)
 
 
-def collect_nars(data_dir: Path) -> Dict[Tuple[str, str, str], List[float]]:
+def collect_nars(
+    data_dir: Path,
+    batch_size: int | None = None,
+    section_order: List[str] | None = None,
+) -> Dict[Tuple[str, str, str], List[float]]:
     """Return {(scenario, algo, mode): [nar, ...]}.
 
     Every run (BASE or canonical) is scored against the scenario's canonical
     (non-BASE) human_sol so NAR is comparable across modes.
+
+    If `batch_size` is given, only runs at that batch size are included.
+    If `section_order` is given, only runs whose meta.config.section_order
+    matches the list are included.
     """
     data: Dict[Tuple[str, str, str], List[float]] = defaultdict(list)
     if not data_dir.is_dir():
         print(f"[ERR] data_dir does not exist: {data_dir}")
         return data
+    so_norm = [str(x).lower() for x in section_order] if section_order else None
     for path in sorted(data_dir.glob("**/*.json")):
         if path.name in ("run_info.json", "manifest.json"):
             continue
@@ -113,6 +122,17 @@ def collect_nars(data_dir: Path) -> Dict[Tuple[str, str, str], List[float]]:
         primary_mode, base_mode, _ = SCENARIOS[s]
         if m not in (primary_mode, base_mode):
             continue
+        if batch_size is not None:
+            bs = meta.get("batch_size")
+            if bs is None or int(bs) != int(batch_size):
+                continue
+        if so_norm is not None:
+            cfg = meta.get("config") or {}
+            meta_so = cfg.get("section_order")
+            if not isinstance(meta_so, list):
+                continue
+            if [str(x).lower() for x in meta_so] != so_norm:
+                continue
         algo.human_sol = list(CANONICAL_HUMAN_SOL[s])
         nar = algo.get_nar()
         if nar is not None:
@@ -243,9 +263,17 @@ def main() -> None:
                     help="Run directory containing per-scenario subfolders of JSON outputs.")
     ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "plots",
                     help="Where to save the plot + CSV (default: outputs/plots/).")
+    ap.add_argument("--batch-size", type=int, default=None,
+                    help="If set, only include runs at this batch size.")
+    ap.add_argument("--section-order", type=str, default=None,
+                    help="Comma-separated section order to filter on (e.g. 'persona,attributes,priorities').")
     args = ap.parse_args()
 
-    nars = collect_nars(args.data_dir)
+    section_order = None
+    if args.section_order:
+        section_order = [s.strip().lower() for s in args.section_order.split(",") if s.strip()]
+
+    nars = collect_nars(args.data_dir, batch_size=args.batch_size, section_order=section_order)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     write_plot(nars, args.output_dir / "base_study_nar.png")

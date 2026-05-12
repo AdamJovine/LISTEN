@@ -5,16 +5,14 @@
 # scenario folder contains every batch-size / section-order combination for
 # that scenario. Sections distinguish runs by metadata, not folder.
 #
-# Sections:
-#   1. Section-order sweep: tournament @ B=32, 40 reps for every (scenario, mode)
-#      across all 6 permutations of {persona, attributes, priorities}.
-#      Pairs: 4 canonical + 4 BASE + headphones:SOFT  = 9 pairs.
-#      6 orders * 9 pairs * 40 reps = 2160 runs per api-model.
-#   2. Batch-size sweep: tournament with section order = persona,attributes,priorities,
-#      40 reps each at B in {2,4,8,16,32}, across the 4 canonical (scenario, mode) pairs.
-#      4 pairs * 5 batch sizes * 40 reps = 800 runs per api-model.
+# Sections (run in order; resume-by-meta dedups completed work):
+#   0a. Non-tournament @ groq:   utility + baseline + full_batch, 9 pairs * 40 reps.
+#   0b. Non-tournament @ gemini: same as 0a but api=gemini (waits for 0a to finish).
+#   1.  Tournament section-order sweep @ B=32, 6 orders * 9 pairs * 40 reps per api.
+#   2.  Tournament batch-size sweep, 4 canonical pairs * {2,4,8,16,32} * 40 reps per api.
 #
-# Both LLM APIs (groq + gemini) are run for every section.
+# Section 0 runs before tournament so the non-tournament series populate quickly;
+# within section 0, groq finishes before gemini starts.
 #
 # Usage:
 #   bash scripts/paper_recreate.sh
@@ -33,6 +31,7 @@ cd "${REPO_ROOT}"
 
 # ── Knobs ───────────────────────────────────────────────────────────────────
 TARGET_REPS="${TARGET_REPS:-40}"
+BASELINE_REPS="${BASELINE_REPS:-${TARGET_REPS}}"
 ITERS="${ITERS:-25}"
 BASE_SEED="${BASE_SEED:-1234}"
 JOBS="${JOBS:-1}"
@@ -225,6 +224,37 @@ submit_jobs() {
     fi
   done
 }
+
+# ─── Section 0: Non-tournament (utility / baseline / full_batch) ────────────
+# Runs first, with groq finishing completely before gemini starts, so the
+# user can plot LISTEN-U / baseline / full_batch series without waiting on
+# the long tournament sweeps.
+build_non_tournament_jobs() {
+  local api="$1"
+  local out_var="$2"
+  local -a jobs=()
+  for pair in "${ALL_PAIRS[@]}"; do
+    IFS=":" read -r scen mode <<<"${pair}"
+    jobs+=("utility|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${DEFAULT_ORDER}|${TARGET_REPS}")
+    jobs+=("baseline|${scen}|${mode}|${api}||||${BASELINE_REPS}")
+    jobs+=("full_batch|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${DEFAULT_ORDER}|${TARGET_REPS}")
+  done
+  eval "${out_var}=(\"\${jobs[@]}\")"
+}
+
+echo "═══════════════════════════════════════════════════════════════════"
+echo "[SECTION 0a] Non-tournament @ groq: utility + baseline + full_batch, 9 pairs × ${TARGET_REPS} reps"
+echo "═══════════════════════════════════════════════════════════════════"
+S0A_JOBS=()
+build_non_tournament_jobs "groq" S0A_JOBS
+submit_jobs "S0a" "${S0A_JOBS[@]}"
+
+echo "═══════════════════════════════════════════════════════════════════"
+echo "[SECTION 0b] Non-tournament @ gemini: utility + baseline + full_batch, 9 pairs × ${TARGET_REPS} reps"
+echo "═══════════════════════════════════════════════════════════════════"
+S0B_JOBS=()
+build_non_tournament_jobs "gemini" S0B_JOBS
+submit_jobs "S0b" "${S0B_JOBS[@]}"
 
 # ─── Section 1: Section-order sweep at B=32 ─────────────────────────────────
 echo "═══════════════════════════════════════════════════════════════════"
