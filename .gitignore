@@ -40,6 +40,10 @@ build/
 
 outputs/*
 !outputs/paper__REPS40__iters25__seed1234__20260430_045057/
+# Whitelist only the plots subdir of the current sweep (raw JSONs ship as a Release asset).
+!outputs/paper__REPS40__iters25__seed1234__20260511_163727/
+outputs/paper__REPS40__iters25__seed1234__20260511_163727/*
+!outputs/paper__REPS40__iters25__seed1234__20260511_163727/plots/
 
 slurms/
 
