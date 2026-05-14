@@ -197,7 +197,7 @@ def write_plot(
     x_labels = [get_scenario_display_name(sc) for sc in scenarios]
     ax.set_xticks(x)
     ax.set_xticklabels(x_labels)
-    ax.set_ylabel("NAR (mean +/- 2 SE)")
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)")
     ax.legend(fontsize=14, loc="upper left")
     ax.set_ylim(bottom=0)
     fig.tight_layout()

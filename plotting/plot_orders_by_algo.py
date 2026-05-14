@@ -62,12 +62,20 @@ ALGO_DISPLAY = {
     "human_rerank":    "human rerank",
 }
 ALGO_COLOR = {
-    "tournament":      "#1F77B4",
-    "utility":         "#E45756",
-    "full_batch":      "#9467BD",
-    "baseline_random": "#7F7F7F",
-    "baseline_zscore": "#BCBD22",
-    "human_rerank":    "#2CA02C",
+    "tournament":      "#1f77b4",
+    "utility":         "#ff7f0e",
+    "full_batch":      "#d62728",
+    "baseline_random": "#2ca02c",
+    "baseline_zscore": "#AA3377",
+    "human_rerank":    "#9467bd",
+}
+ALGO_MARKER = {
+    "tournament":      "^",
+    "utility":         "s",
+    "full_batch":      "P",
+    "baseline_random": "X",
+    "baseline_zscore": "D",
+    "human_rerank":    "v",
 }
 
 
@@ -175,9 +183,11 @@ def collect_by_order(
         for col_id, c_scen, primary_mode, _disp in COLUMNS:
             if c_scen != scen:
                 continue
-            # tournament/utility/full_batch are mode-specific; baseline variants
-            # are mode-agnostic and contribute to every column for their scenario.
-            if algo_name in ("tournament", "utility", "full_batch") and mode != primary_mode:
+            # NAR is scored against the run's mode-specific human_sol, so every
+            # algo (including baseline variants) must match the column's
+            # primary_mode — otherwise the same deterministic z-score winner
+            # ends up averaged against multiple different gold rankings.
+            if mode != primary_mode:
                 continue
             data[(col_id, algo_name, so_key)].append(nar)
     return data
@@ -264,13 +274,14 @@ def plot_one_api(
     x_centers = np.arange(n_col)
     algo_offsets = np.linspace(-0.35, 0.35, n_algo) if n_algo > 1 else np.array([0.0])
 
-    fig, ax = plt.subplots(figsize=(max(10, 2 * n_col + 2), 5.5))
+    fig, ax = plt.subplots(figsize=(max(10, 2 * n_col + 2), 7.0))
 
     legend_handles: Dict[str, Any] = {}
     sub_jitter_spread = 0.08
 
     for ai, algo in enumerate(used_algos):
         color = ALGO_COLOR[algo]
+        marker = ALGO_MARKER[algo]
         x_algo = x_centers + algo_offsets[ai]
         for si, col_id in enumerate(column_ids):
             if algo == "human_rerank":
@@ -280,7 +291,7 @@ def plot_one_api(
                 mu, err = mean_and_2se(vals)
                 ax.errorbar(
                     [x_algo[si]], [mu], yerr=[err],
-                    fmt="D", color=color, markersize=7, capsize=3,
+                    fmt=marker, color=color, markersize=8, capsize=3,
                     linewidth=0, elinewidth=1.2,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
                 )
@@ -302,7 +313,7 @@ def plot_one_api(
                 xi = x_algo[si] + sub_offsets[oi]
                 ax.errorbar(
                     [xi], [mu], yerr=[err],
-                    fmt="o", color=color, markersize=5, capsize=2.5,
+                    fmt=marker, color=color, markersize=6, capsize=2.5,
                     linewidth=0, elinewidth=1.0, alpha=0.85,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
                 )
@@ -311,19 +322,14 @@ def plot_one_api(
                     ax.annotate(str(idx), (xi, mu + err),
                                 textcoords="offset points", xytext=(0, 5),
                                 ha="center", fontsize=9, fontweight="bold", color=color)
-                elif so is None:
-                    # Aggregated mode (no section_order) — show n= so the count is legible.
-                    ax.annotate(f"n={len(vals)}", (xi, mu + err),
-                                textcoords="offset points", xytext=(0, 5),
-                                ha="center", fontsize=7, color=color)
                 legend_handles.setdefault(algo, True)
 
     ax.set_xticks(x_centers)
     ax.set_xticklabels([column_labels[c] for c in column_ids])
-    ax.set_ylabel("NAR (mean +/- 2 SE)")
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)")
     ax.set_ylim(bottom=0)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    ax.legend(fontsize=14, loc="upper left", title=None)
+    ax.legend(fontsize=14, loc="center left", title=None)
 
     # When the plot uses section-order indices, append a footer explaining 1..6.
     needs_key = any(

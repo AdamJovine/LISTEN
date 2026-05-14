@@ -109,6 +109,7 @@ def collect_nars(
     data_dir: Path,
     batch_size: int | None = None,
     section_order: List[str] | None = None,
+    api_model: str | None = None,
 ) -> Dict[Tuple[str, str, str], List[float]]:
     """Return {(col_id, algo, kind): [nar, ...]} where kind in {"primary", "base"}.
 
@@ -136,7 +137,11 @@ def collect_nars(
         m = meta.get("mode", "")
         if a not in ALGOS or s not in SCENARIOS_IN_COLUMNS:
             continue
-        if batch_size is not None:
+        if api_model is not None and meta.get("api_model") != api_model:
+            continue
+        # batch_size filter is tournament-specific — utility runs use a
+        # different batch_size and would otherwise be dropped entirely.
+        if batch_size is not None and a in ("tournament", "full_batch"):
             bs = meta.get("batch_size")
             if bs is None or int(bs) != int(batch_size):
                 continue
@@ -217,7 +222,7 @@ def write_plot(
     spread = 0.12
     offsets = np.linspace(-spread * (n_series - 1) / 2, spread * (n_series - 1) / 2, n_series)
 
-    fig, ax = plt.subplots(figsize=(max(10, 2 * n_columns + 2), 5.5))
+    fig, ax = plt.subplots(figsize=(max(10, 2 * n_columns + 2), 7.0))
 
     for i, key in enumerate(visible_keys):
         color, marker = SERIES_STYLE[key]
@@ -255,7 +260,7 @@ def write_plot(
     x_labels = [display_names[col_id] for col_id in column_ids]
     ax.set_xticks(x)
     ax.set_xticklabels(x_labels)
-    ax.set_ylabel("NAR (mean +/- 2 SE)")
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)")
     ax.legend(fontsize=14, loc="upper left")
     ax.set_ylim(bottom=0)
     fig.tight_layout()
@@ -303,20 +308,31 @@ def main() -> None:
     ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "plots",
                     help="Where to save the plot + CSV (default: outputs/plots/).")
     ap.add_argument("--batch-size", type=int, default=None,
-                    help="If set, only include runs at this batch size.")
+                    help="If set, only include tournament/full_batch runs at this batch size "
+                         "(utility runs are exempt — they use a different batch size).")
     ap.add_argument("--section-order", type=str, default=None,
                     help="Comma-separated section order to filter on (e.g. 'persona,attributes,priorities').")
+    ap.add_argument("--api-model", action="append", default=None,
+                    help="Repeatable. If omitted, both groq and gemini are plotted "
+                         "into per-api files (base_study_nar__<api>.png).")
     args = ap.parse_args()
 
     section_order = None
     if args.section_order:
         section_order = [s.strip().lower() for s in args.section_order.split(",") if s.strip()]
 
-    nars = collect_nars(args.data_dir, batch_size=args.batch_size, section_order=section_order)
-
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    write_plot(nars, args.output_dir / "base_study_nar.png")
-    write_table(nars, args.output_dir / "base_vs_primary_table.csv")
+    api_models = args.api_model or ["groq", "gemini"]
+    for api in api_models:
+        nars = collect_nars(
+            args.data_dir,
+            batch_size=args.batch_size,
+            section_order=section_order,
+            api_model=api,
+        )
+        print(f"\n=== api_model={api} ===")
+        write_plot(nars, args.output_dir / f"base_study_nar__{api}.png")
+        write_table(nars, args.output_dir / f"base_vs_primary_table__{api}.csv")
 
 
 if __name__ == "__main__":
