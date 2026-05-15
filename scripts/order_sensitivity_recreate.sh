@@ -309,6 +309,6 @@ echo "[DONE] Runs complete in ${OUTPUT_ROOT}"
 if [[ "${RUN_PLOTS}" == "1" ]]; then
   echo "=== [PLOTS] Generating order-sensitivity plots ==="
   PLOT_API_MODEL="${API_MODEL:-${API_MODEL_LIST// /,}}"
-  OUTPUT_ROOT="${OUTPUT_ROOT}" PLOT_DIR="${REPO_ROOT}/outputs" API_MODEL="${PLOT_API_MODEL}" \
+  OUTPUT_ROOT="${OUTPUT_ROOT}" PLOT_DIR="${REPO_ROOT}/outputs/plots" API_MODEL="${PLOT_API_MODEL}" \
     bash "${SCRIPT_DIR}/make_plots.sh"
 fi

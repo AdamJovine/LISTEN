@@ -522,7 +522,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data-dir", required=True, type=Path,
                     help="Run directory containing per-scenario subfolders of JSON outputs.")
-    ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs")
+    ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "plots")
     ap.add_argument("--api-model", action="append", default=None,
                     help="Repeatable. If omitted, both groq and gemini are plotted.")
     ap.add_argument("--batch-size", type=int, default=32,

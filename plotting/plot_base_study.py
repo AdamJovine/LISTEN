@@ -9,7 +9,7 @@ is comparable across modes.
 Reads runs from --data-dir (which must contain per-scenario subfolders of
 JSON outputs from run_algorithm.py).
 
-Outputs (default outputs/):
+Outputs (default outputs/plots/):
   base_study_nar__<api>.png
   base_vs_primary_table__<api>.csv
 """
@@ -349,8 +349,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data-dir", required=True, type=Path,
                     help="Run directory containing per-scenario subfolders of JSON outputs.")
-    ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs",
-                    help="Where to save the plot + CSV (default: outputs/).")
+    ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "plots",
+                    help="Where to save the plot + CSV (default: outputs/plots/).")
     ap.add_argument("--api-model", action="append", default=None,
                     help="Repeatable. If omitted, both groq (llama) and gemini are plotted "
                          "as separate figures.")

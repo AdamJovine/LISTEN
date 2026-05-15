@@ -32,7 +32,7 @@ if [[ -z "${OUTPUT_ROOT:-}" ]]; then
   OUTPUT_ROOT="${latest_output}"
 fi
 
-PLOT_DIR="${PLOT_DIR:-${REPO_ROOT}/outputs}"
+PLOT_DIR="${PLOT_DIR:-${REPO_ROOT}/outputs/plots}"
 mkdir -p "${PLOT_DIR}"
 
 MAIN_BATCH_SIZE="${MAIN_BATCH_SIZE:-32}"

@@ -39,8 +39,10 @@ build/
 .env
 
 outputs/*
-!outputs/*.csv
-!outputs/*.png
+!outputs/plots/
+outputs/plots/*
+!outputs/plots/*.csv
+!outputs/plots/*.png
 
 slurms/
 

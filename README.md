@@ -149,7 +149,7 @@ bash scripts/order_sensitivity_recreate.sh
 
 That script runs all six permutations of `persona`, `attributes`, and
 `priorities`, then writes plots such as
-`outputs/groq__nar__scenario__by_algo_orders.png`.
+`outputs/plots/groq__nar__scenario__by_algo_orders.png`.
 It defaults to Groq-only outputs for the open-source artifact set; set
 `API_MODELS=groq,gemini` once the Gemini sweep is complete.
 
@@ -183,9 +183,9 @@ outputs/paper__REPS40__iters25__seed1234__<stamp>/
 
 Each script runs the experiment grid as a sequence of sections, each with a
 retry-until-target loop, and then generates the corresponding paper plots
-directly under `outputs/`. Local run directories may still contain scratch
+under `outputs/plots/`. Local run directories may still contain scratch
 `plots/` folders while experimenting, but the tracked open-source artifact
-bundle is the flat `outputs/*.png` and `outputs/*.csv` set.
+bundle is the flat `outputs/plots/*.png` and `outputs/plots/*.csv` set.
 
 ## 6) Plots
 
@@ -208,13 +208,13 @@ To regenerate only the Groq section-order figure from an existing run:
 ```bash
 python plotting/plot_orders_by_algo.py \
   --data-dir outputs/<run-dir> \
-  --output-dir outputs \
+  --output-dir outputs/plots \
   --api-model groq \
   --batch-size 32
 ```
 
 If the raw JSON runs are absent but the matching summary CSV already exists in
-`outputs/`, the same command regenerates the PNG from that CSV.
+`outputs/plots/`, the same command regenerates the PNG from that CSV.
 
 ## 7) Tests
 
