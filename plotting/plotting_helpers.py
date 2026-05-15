@@ -349,12 +349,12 @@ ALGO_DISPLAY_NAMES = {
 
 # Color mapping for algorithms
 ALGO_COLORS = {
-    "TournamentExperiment": "blue",
-    "UtilityExperiment": "orange",
-    "BaselineRandom": "green",
-    "BaselineZscore": "maroon",
-    "BaselineRerank": "purple",
-    "FullBatchExperiment": "red",
+    "TournamentExperiment": "#1f77b4",
+    "UtilityExperiment": "#ff7f0e",
+    "BaselineRandom": "#2ca02c",
+    "BaselineZscore": "#AA3377",
+    "BaselineRerank": "#9467bd",
+    "FullBatchExperiment": "#d62728",
 }
 
 

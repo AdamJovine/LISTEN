@@ -27,6 +27,9 @@ from plotting_helpers import (
     compute_mean_and_stderr,
 )
 
+LISTEN_T_COLOR = "#1f77b4"
+LISTEN_U_COLOR = "#ff7f0e"
+
 if TYPE_CHECKING:
     from experiment import Experiment as AlgorithmClass
 
@@ -95,20 +98,20 @@ def headphones_plot(args: argparse.Namespace):
 
     # If no mode specified, compare only the canonical headphones plot modes.
     if args.mode is None:
-        available_modes = set()
-        for json_file in base_dir.glob("**/*.json"):
-            try:
-                algo = load_algo(json_file)
-                # Only include modes that match the scenario
-                if algo.get_scenario() == args.scenario:
-                    mode = algo.get_mode()
-                    if mode:
-                        available_modes.add(mode)
-            except:
-                pass
         if args.scenario == "headphones":
-            modes = [mode for mode in ("MAIN", "SOFT") if mode in available_modes]
+            modes = ["MAIN", "SOFT"]
         else:
+            available_modes = set()
+            for json_file in base_dir.glob("**/*.json"):
+                try:
+                    algo = load_algo(json_file)
+                    # Only include modes that match the scenario
+                    if algo.get_scenario() == args.scenario:
+                        mode = algo.get_mode()
+                        if mode:
+                            available_modes.add(mode)
+                except:
+                    pass
             modes = sorted(available_modes)
     else:
         modes = [args.mode]
@@ -150,9 +153,9 @@ def headphones_plot(args: argparse.Namespace):
     utility_errs = [results[mode]["utility"][1] for mode in modes]
 
     bars1 = plt.bar(x - width/2, tournament_heights, width, yerr=tournament_errs,
-                    capsize=4, alpha=0.7, color="#517ba5", label="LISTEN-T")
+                    capsize=4, color=LISTEN_T_COLOR, label="LISTEN-T")
     bars2 = plt.bar(x + width/2, utility_heights, width, yerr=utility_errs,
-                    capsize=4, alpha=0.7, color="#e8924a", label="LISTEN-U")
+                    capsize=4, color=LISTEN_U_COLOR, label="LISTEN-U")
 
     # Add sample sizes on bars
     for i, (bar1, bar2) in enumerate(zip(bars1, bars2)):
@@ -283,7 +286,7 @@ def layout_comparison_plot(args: argparse.Namespace):
 
     fig, ax = plt.subplots(figsize=(max(10, len(bar_specs) * 0.9), 5))
 
-    color_map = {"tournament": "#517ba5", "utility": "#e8924a"}
+    color_map = {"tournament": LISTEN_T_COLOR, "utility": LISTEN_U_COLOR}
     label_map = {"tournament": "LISTEN-T", "utility": "LISTEN-U"}
     legend_seen = set()
 
