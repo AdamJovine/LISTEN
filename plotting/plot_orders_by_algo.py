@@ -178,8 +178,8 @@ def collect_by_order(
 ) -> Dict[Tuple[str, str, Tuple[str, ...] | None], List[float]]:
     """Return {(column_id, algo_name, section_order_tuple_or_None): [nars...]}.
 
-    Filters: api_model matches; tournament/full_batch runs at the given batch
-    size only. Each baseline JSON is expanded into a BaselineRandom and
+    Filters: api_model matches; tournament runs at the given batch size only.
+    Each baseline JSON is expanded into a BaselineRandom and
     (when zscore_winner is non-null) BaselineZscore variant.
     """
     data: Dict[Tuple[str, str, Tuple[str, ...] | None], List[float]] = defaultdict(list)
@@ -197,7 +197,7 @@ def collect_by_order(
         if meta.get("scenario") not in _SCENARIOS_IN_COLUMNS:
             continue
         algo_kind = meta.get("algo")
-        if algo_kind in ("tournament", "full_batch") and tournament_batch_size is not None:
+        if algo_kind == "tournament" and tournament_batch_size is not None:
             if meta.get("batch_size") != tournament_batch_size:
                 continue
         try:
@@ -265,6 +265,24 @@ def collect_rerank() -> Dict[str, List[float]]:
                 if n is not None:
                     out[col_id].append(n)
     return out
+
+
+def cap_raw_values(
+    data: Dict[Tuple[str, str, Tuple[str, ...] | None], List[float]],
+    reps_cap: int | None,
+) -> Dict[Tuple[str, str, Tuple[str, ...] | None], List[float]]:
+    if reps_cap is None:
+        return data
+    return {key: vals[:reps_cap] for key, vals in data.items()}
+
+
+def cap_summary_counts(
+    summary: Dict[Tuple[str, str, Tuple[str, ...] | None], Tuple[float, float, int]],
+    reps_cap: int | None,
+) -> Dict[Tuple[str, str, Tuple[str, ...] | None], Tuple[float, float, int]]:
+    if reps_cap is None:
+        return summary
+    return {key: (mean, err, min(n, reps_cap)) for key, (mean, err, n) in summary.items()}
 
 
 def write_table(
@@ -552,11 +570,20 @@ def main() -> None:
     ap.add_argument("--aggregate-orders", action="store_true",
                     help="Collapse section_order sub-points into one aggregate per algo "
                          "(produces <api>__nar__scenario__by_algo.png instead of _orders.png).")
+    ap.add_argument("--include-soft", action="store_true",
+                    help="Include the Headphones-SOFT column in the aggregate main plot. "
+                         "Non-aggregate order-sensitivity plots include it by default.")
     ap.add_argument("--section-order", type=str, default=None,
                     help="Comma-separated section order to filter prompt-aware algos to "
                          "(e.g. 'persona,attributes,priorities'). Baselines and human_rerank "
                          "are unaffected.")
+    ap.add_argument("--reps-cap", type=int, default=40,
+                    help="Maximum runs per plotted cell before aggregation (default 40; 0 disables).")
     args = ap.parse_args()
+
+    global COLUMNS
+    if args.aggregate_orders and not args.include_soft:
+        COLUMNS = [col for col in COLUMNS if col[0] != "headphones__SOFT"]
 
     api_models = args.api_model or ["groq", "gemini"]
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -565,6 +592,7 @@ def main() -> None:
     so_filter = None
     if args.section_order:
         so_filter = tuple(s.strip().lower() for s in args.section_order.split(",") if s.strip())
+    reps_cap = args.reps_cap if args.reps_cap and args.reps_cap > 0 else None
 
     for api in api_models:
         data = collect_by_order(
@@ -572,11 +600,12 @@ def main() -> None:
             tournament_batch_size=args.batch_size,
             section_order_filter=so_filter,
         )
+        data = cap_raw_values(data, reps_cap)
         if args.aggregate_orders:
             agg: Dict[Tuple[str, str, Tuple[str, ...] | None], List[float]] = defaultdict(list)
             for (col_id, algo, _so), vals in data.items():
                 agg[(col_id, algo, None)].extend(vals)
-            data = agg
+            data = cap_raw_values(agg, reps_cap)
             stem = f"{api}__nar__scenario__by_algo"
         else:
             stem = f"{api}__nar__scenario__by_algo_orders"
@@ -584,7 +613,7 @@ def main() -> None:
         has_raw_data = any(vals for vals in data.values())
         if not has_raw_data and csv_path.exists():
             print(f"[summary] no raw JSON rows for api_model={api}; regenerating from {csv_path}")
-            summary = read_summary_table(csv_path)
+            summary = cap_summary_counts(read_summary_table(csv_path), reps_cap)
             plot_one_api_summary(
                 summary, api, args.output_dir / f"{stem}.png",
                 show_n_labels=args.aggregate_orders,
