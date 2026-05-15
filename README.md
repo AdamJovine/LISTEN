@@ -196,7 +196,6 @@ All plot scripts can also be run standalone against any run directory:
 | Headphones SOFT vs MAIN           | `plotting/headphones_plot.py`                | `--output-dir <RUN>`    |
 | Cross-scenario × algorithm (LISTEN-T, LISTEN-U, baseline, full-batch, human rerank) | `plotting/general_plot.py` with `--canonical_mode` | `--path <RUN>` |
 | Per-scenario batch-size sweep (B={2,4,8,16,32}) | `plotting/general_plot.py`                | `--path <RUN>`          |
-| Reorder (header_then_task vs task_then_header) | `plotting/plot_order_study.py` (PNG + CSV) | `--data-dir <RUN>`      |
 | Section-order sensitivity (persona/attributes/priorities) | `plotting/plot_orders_by_algo.py` (PNG + CSV) | `--data-dir <RUN>` |
 | Preference-utterance ablation (canonical vs BASE) | `plotting/plot_base_study.py` (PNG + CSV) | `--data-dir <RUN>`     |
 

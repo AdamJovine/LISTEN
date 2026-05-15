@@ -12,11 +12,9 @@
 #      (header_then_task_v1).
 #   2. Headphones SOFT mode: tournament @ B=8 + utility, default format.
 #   3. utility / baseline / full_batch in canonical modes (default format).
-#   4. Reverse prompt format (task_then_header_v1) at B=32 over the 4
-#      canonical pairs (tournament + utility) — for the order study.
-#   5. BASE preference-utterance ablation at B=32 over the 4 BASE
+#   4. BASE preference-utterance ablation at B=32 over the 4 BASE
 #      scenario/mode pairs (tournament + utility).
-#   6. All plots.
+#   5. All plots.
 #
 # Both LLM APIs (groq + gemini) are run for every section.
 #
@@ -44,10 +42,8 @@ JOBS="${JOBS:-4}"
 MAX_ROUNDS="${MAX_ROUNDS:-10}"
 
 DEFAULT_PROMPT="header_then_task_v1"
-REVERSE_PROMPT="task_then_header_v1"
 MAIN_BATCH_SIZE=32
 SWEEP_BATCH_SIZES=(2 4 8 16 32)
-ORDER_BATCH_SIZE=32
 BASE_BATCH_SIZE=32
 
 API_MODELS=("groq" "gemini")
@@ -258,45 +254,31 @@ for api in "${API_MODELS[@]}"; do
 done
 submit_jobs "S3" "${S3_JOBS[@]}"
 
-# ─── Section 4: Reverse prompt format at B=32 ───────────────────────────────
+# ─── Section 4: BASE preference utterance at B=32 ───────────────────────────
 echo "═══════════════════════════════════════════════════════════════════"
-echo "[SECTION 4] Reverse prompt format (${REVERSE_PROMPT}) at B=${ORDER_BATCH_SIZE}"
+echo "[SECTION 4] BASE preference-utterance ablation at B=${BASE_BATCH_SIZE}"
 echo "═══════════════════════════════════════════════════════════════════"
 S4_JOBS=()
 for api in "${API_MODELS[@]}"; do
-  for pair in "${CANONICAL_PAIRS[@]}"; do
+  for pair in "${BASE_PAIRS[@]}"; do
     IFS=":" read -r scen mode <<<"${pair}"
-    S4_JOBS+=("tournament|${scen}|${mode}|${api}|${ORDER_BATCH_SIZE}|${REVERSE_PROMPT}|${TARGET_REPS}")
-    S4_JOBS+=("utility|${scen}|${mode}|${api}||${REVERSE_PROMPT}|${TARGET_REPS}")
+    S4_JOBS+=("tournament|${scen}|${mode}|${api}|${BASE_BATCH_SIZE}|${DEFAULT_PROMPT}|${TARGET_REPS}")
+    S4_JOBS+=("utility|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${TARGET_REPS}")
   done
 done
 submit_jobs "S4" "${S4_JOBS[@]}"
-
-# ─── Section 5: BASE preference utterance at B=32 ───────────────────────────
-echo "═══════════════════════════════════════════════════════════════════"
-echo "[SECTION 5] BASE preference-utterance ablation at B=${BASE_BATCH_SIZE}"
-echo "═══════════════════════════════════════════════════════════════════"
-S5_JOBS=()
-for api in "${API_MODELS[@]}"; do
-  for pair in "${BASE_PAIRS[@]}"; do
-    IFS=":" read -r scen mode <<<"${pair}"
-    S5_JOBS+=("tournament|${scen}|${mode}|${api}|${BASE_BATCH_SIZE}|${DEFAULT_PROMPT}|${TARGET_REPS}")
-    S5_JOBS+=("utility|${scen}|${mode}|${api}||${DEFAULT_PROMPT}|${TARGET_REPS}")
-  done
-done
-submit_jobs "S5" "${S5_JOBS[@]}"
 
 echo "═══════════════════════════════════════════════════════════════════"
 echo "[DONE] All runs complete in ${OUTPUT_ROOT}"
 echo "═══════════════════════════════════════════════════════════════════"
 
-# ─── Section 6: Plots ───────────────────────────────────────────────────────
+# ─── Section 5: Plots ───────────────────────────────────────────────────────
 PLOT_DIR="${OUTPUT_ROOT}/plots"
 mkdir -p "${PLOT_DIR}"
 
 echo ""
 echo "═══════════════════════════════════════════════════════════════════"
-echo "[SECTION 6] Plots -> ${PLOT_DIR}"
+echo "[SECTION 5] Plots -> ${PLOT_DIR}"
 echo "═══════════════════════════════════════════════════════════════════"
 
 # Plot 1: Headphones SOFT vs MAIN (one figure per api_model)
@@ -331,14 +313,8 @@ echo "[PLOT 3] Per-scenario × batch sizes (tournament)"
   --x_medium batch_size all \
   --y nar
 
-# Plot 4: Reorder study (header_then_task_v1 vs task_then_header_v1)
-echo "[PLOT 4] Reorder study"
-"${PYTHON_BIN}" "${REPO_ROOT}/plotting/plot_order_study.py" \
-  --data-dir "${OUTPUT_ROOT}" \
-  --output-dir "${PLOT_DIR}"
-
-# Plot 5: BASE vs canonical mode (preference-utterance ablation)
-echo "[PLOT 5] BASE vs canonical mode"
+# Plot 4: BASE vs canonical mode (preference-utterance ablation)
+echo "[PLOT 4] BASE vs canonical mode"
 "${PYTHON_BIN}" "${REPO_ROOT}/plotting/plot_base_study.py" \
   --data-dir "${OUTPUT_ROOT}" \
   --output-dir "${PLOT_DIR}"

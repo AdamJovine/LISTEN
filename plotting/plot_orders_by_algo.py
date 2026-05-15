@@ -139,6 +139,20 @@ def annotate_section_order(ax: Any, x: float, y: float, err: float, idx: int, co
     )
 
 
+def annotate_sample_size(ax: Any, x: float, y: float, err: float, n: int, color: str) -> None:
+    ax.annotate(
+        f"n={n}",
+        (x, y + err),
+        textcoords="offset points",
+        xytext=(0, 5),
+        ha="center",
+        va="bottom",
+        fontsize=8,
+        color=color,
+        alpha=0.8,
+    )
+
+
 _SCENARIOS_IN_COLUMNS = {scen for _c, scen, _m, _d in COLUMNS}
 
 
@@ -330,6 +344,7 @@ def plot_one_api_summary(
     summary: Dict[Tuple[str, str, Tuple[str, ...] | None], Tuple[float, float, int]],
     api_model: str,
     out_path: Path,
+    show_n_labels: bool = False,
 ) -> None:
     column_ids = [c for c, _s, _m, _d in COLUMNS]
     column_labels = {c: d for c, _s, _m, d in COLUMNS}
@@ -368,7 +383,7 @@ def plot_one_api_summary(
                 if len(orders) > 1 else np.array([0.0])
             )
             for oi, so in enumerate(orders):
-                mu, err, _n = summary[(col_id, algo, so)]
+                mu, err, n = summary[(col_id, algo, so)]
                 xi = x_algo[si] + sub_offsets[oi]
                 ax.errorbar(
                     [xi], [mu], yerr=[err],
@@ -379,6 +394,8 @@ def plot_one_api_summary(
                 idx = SECTION_ORDER_INDEX.get(so) if so is not None else None
                 if idx is not None:
                     annotate_section_order(ax, xi, mu, err, idx, color)
+                elif show_n_labels:
+                    annotate_sample_size(ax, xi, mu, err, n, color)
                 legend_handles.setdefault(algo, True)
 
     ax.set_xticks(x_centers)
@@ -417,6 +434,7 @@ def plot_one_api(
     rerank: Dict[str, List[float]],
     api_model: str,
     out_path: Path,
+    show_n_labels: bool = False,
 ) -> None:
     column_ids = [c for c, _s, _m, _d in COLUMNS]
     column_labels = {c: d for c, _s, _m, d in COLUMNS}
@@ -461,6 +479,8 @@ def plot_one_api(
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
                     **errorbar_style(algo),
                 )
+                if show_n_labels:
+                    annotate_sample_size(ax, x_algo[si], mu, err, len(vals), color)
                 legend_handles.setdefault(algo, True)
                 continue
 
@@ -484,6 +504,8 @@ def plot_one_api(
                 idx = SECTION_ORDER_INDEX.get(so) if so is not None else None
                 if idx is not None:
                     annotate_section_order(ax, xi, mu, err, idx, color)
+                elif show_n_labels:
+                    annotate_sample_size(ax, xi, mu, err, len(vals), color)
                 legend_handles.setdefault(algo, True)
 
     ax.set_xticks(x_centers)
@@ -563,9 +585,15 @@ def main() -> None:
         if not has_raw_data and csv_path.exists():
             print(f"[summary] no raw JSON rows for api_model={api}; regenerating from {csv_path}")
             summary = read_summary_table(csv_path)
-            plot_one_api_summary(summary, api, args.output_dir / f"{stem}.png")
+            plot_one_api_summary(
+                summary, api, args.output_dir / f"{stem}.png",
+                show_n_labels=args.aggregate_orders,
+            )
             continue
-        plot_one_api(data, rerank, api, args.output_dir / f"{stem}.png")
+        plot_one_api(
+            data, rerank, api, args.output_dir / f"{stem}.png",
+            show_n_labels=args.aggregate_orders,
+        )
         write_table(data, rerank, csv_path)
 
 
