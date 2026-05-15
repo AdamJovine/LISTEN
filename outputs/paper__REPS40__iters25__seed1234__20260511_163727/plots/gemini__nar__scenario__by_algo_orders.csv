@@ -1,14 +1,25 @@
 column,algo,section_order,n,mean_nar,two_se
-Flights Ithaca → Reston,tournament,"persona,attributes,priorities",19,0.0097,0.0056
-Flights Ithaca → Reston,utility,"attributes,persona,priorities",39,0.0385,0.0016
+Flights Ithaca → Reston,tournament,"attributes,persona,priorities",40,0.0186,0.0051
+Flights Ithaca → Reston,tournament,"attributes,priorities,persona",40,0.0162,0.0047
+Flights Ithaca → Reston,tournament,"persona,attributes,priorities",40,0.0111,0.0039
+Flights Ithaca → Reston,tournament,"persona,priorities,attributes",40,0.0103,0.0034
+Flights Ithaca → Reston,tournament,"priorities,attributes,persona",40,0.0404,0.0362
+Flights Ithaca → Reston,tournament,"priorities,persona,attributes",40,0.0075,0.0027
+Flights Ithaca → Reston,utility,"attributes,persona,priorities",40,0.0384,0.0016
 Flights Ithaca → Reston,utility,"attributes,priorities,persona",40,0.0489,0.0248
 Flights Ithaca → Reston,utility,"persona,attributes,priorities",40,0.0356,0.0019
 Flights Ithaca → Reston,utility,"persona,priorities,attributes",40,0.0380,0.0013
-Flights Ithaca → Reston,utility,"priorities,attributes,persona",39,0.0502,0.0253
+Flights Ithaca → Reston,utility,"priorities,attributes,persona",40,0.0498,0.0246
 Flights Ithaca → Reston,utility,"priorities,persona,attributes",40,0.0498,0.0246
 Flights Ithaca → Reston,baseline_random,,40,0.5301,0.0000
 Flights Ithaca → Reston,baseline_zscore,,1,0.0370,0.0000
 Flights Ithaca → Reston,human_rerank,,4,0.0058,0.0023
+Flights Chicago → NYC,tournament,"attributes,persona,priorities",40,0.5094,0.0000
+Flights Chicago → NYC,tournament,"attributes,priorities,persona",40,0.4466,0.0533
+Flights Chicago → NYC,tournament,"persona,attributes,priorities",40,0.4589,0.0485
+Flights Chicago → NYC,tournament,"persona,priorities,attributes",40,0.4595,0.0480
+Flights Chicago → NYC,tournament,"priorities,attributes,persona",40,0.4716,0.0426
+Flights Chicago → NYC,tournament,"priorities,persona,attributes",40,0.4592,0.0482
 Flights Chicago → NYC,utility,"attributes,persona,priorities",40,0.5094,0.0000
 Flights Chicago → NYC,utility,"attributes,priorities,persona",40,0.5094,0.0000
 Flights Chicago → NYC,utility,"persona,attributes,priorities",40,0.5094,0.0000
@@ -18,6 +29,12 @@ Flights Chicago → NYC,utility,"priorities,persona,attributes",40,0.5094,0.0000
 Flights Chicago → NYC,baseline_random,,40,0.5094,0.0000
 Flights Chicago → NYC,baseline_zscore,,1,0.5094,0.0000
 Flights Chicago → NYC,human_rerank,,4,0.5094,0.0000
+Headphones-MAIN,tournament,"attributes,persona,priorities",40,0.1731,0.0631
+Headphones-MAIN,tournament,"attributes,priorities,persona",40,0.1090,0.0497
+Headphones-MAIN,tournament,"persona,attributes,priorities",40,0.1433,0.0602
+Headphones-MAIN,tournament,"persona,priorities,attributes",40,0.2192,0.0762
+Headphones-MAIN,tournament,"priorities,attributes,persona",40,0.2031,0.0701
+Headphones-MAIN,tournament,"priorities,persona,attributes",40,0.1971,0.0749
 Headphones-MAIN,utility,"attributes,persona,priorities",40,0.6231,0.0000
 Headphones-MAIN,utility,"attributes,priorities,persona",40,0.6231,0.0000
 Headphones-MAIN,utility,"persona,attributes,priorities",40,0.6231,0.0000
@@ -27,9 +44,26 @@ Headphones-MAIN,utility,"priorities,persona,attributes",40,0.6231,0.0000
 Headphones-MAIN,baseline_random,,40,0.5254,0.0632
 Headphones-MAIN,baseline_zscore,,1,0.6231,0.0000
 Headphones-MAIN,human_rerank,,4,0.1904,0.2887
-Headphones-SOFT,utility,"persona,attributes,priorities",9,0.3026,0.2027
+Headphones-SOFT,tournament,"attributes,persona,priorities",80,0.1833,0.0343
+Headphones-SOFT,tournament,"attributes,priorities,persona",77,0.1556,0.0336
+Headphones-SOFT,tournament,"persona,attributes,priorities",79,0.1793,0.0426
+Headphones-SOFT,tournament,"persona,priorities,attributes",75,0.2550,0.0448
+Headphones-SOFT,tournament,"priorities,attributes,persona",71,0.2456,0.0475
+Headphones-SOFT,tournament,"priorities,persona,attributes",78,0.2201,0.0396
+Headphones-SOFT,utility,"attributes,persona,priorities",40,0.0660,0.0288
+Headphones-SOFT,utility,"attributes,priorities,persona",40,0.1038,0.0554
+Headphones-SOFT,utility,"persona,attributes,priorities",40,0.2063,0.0822
+Headphones-SOFT,utility,"persona,priorities,attributes",40,0.0629,0.0288
+Headphones-SOFT,utility,"priorities,attributes,persona",40,0.0644,0.0288
+Headphones-SOFT,utility,"priorities,persona,attributes",40,0.1190,0.0610
 Headphones-SOFT,baseline_random,,40,0.4446,0.0786
 Headphones-SOFT,baseline_zscore,,1,0.0769,0.0000
+Exam Scheduling,tournament,"attributes,persona,priorities",40,0.4887,0.0250
+Exam Scheduling,tournament,"attributes,priorities,persona",40,0.4637,0.0422
+Exam Scheduling,tournament,"persona,attributes,priorities",40,0.4762,0.0349
+Exam Scheduling,tournament,"persona,priorities,attributes",40,0.4637,0.0422
+Exam Scheduling,tournament,"priorities,attributes,persona",40,0.4887,0.0251
+Exam Scheduling,tournament,"priorities,persona,attributes",40,0.4762,0.0349
 Exam Scheduling,utility,"attributes,persona,priorities",40,0.4513,0.0480
 Exam Scheduling,utility,"attributes,priorities,persona",40,0.4887,0.0250
 Exam Scheduling,utility,"persona,attributes,priorities",40,0.4887,0.0250
