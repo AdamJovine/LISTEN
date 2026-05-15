@@ -33,31 +33,74 @@ from plotting_helpers import (  # noqa: E402
 # has more than one preference-utterance mode worth plotting separately.
 COLUMNS: List[Tuple[str, str, str, str]] = [
     # (column_id, scenario, primary_mode, display_name)
-    ("flights_ithaca_reston", "flights_ithaca_reston", "Complicated",            "Flights Ithaca → Reston"),
-    ("flights_chi_nyc",       "flights_chi_nyc",       "Complicated_structured", "Flights Chicago → NYC"),
-    ("headphones__MAIN",      "headphones",            "MAIN",                   "Headphones-MAIN"),
+    ("flights_ithaca_reston", "flights_ithaca_reston", "Complicated",            "Flights Ithaca->Reston"),
+    ("flights_chi_nyc",       "flights_chi_nyc",       "Complicated_structured", "Flights CHI->NYC"),
+    ("headphones__MAIN",      "headphones",            "MAIN",                   "Headphones"),
     ("headphones__SOFT",      "headphones",            "SOFT",                   "Headphones-SOFT"),
     ("exam",                  "exam",                  "REGISTRAR",              "Exam Scheduling"),
 ]
+
+# Canonical section-order numbering used by scripts/order_sensitivity_recreate.sh.
+SECTION_ORDER_INDEX: Dict[Tuple[str, ...], int] = {
+    ("persona", "attributes", "priorities"): 1,
+    ("persona", "priorities", "attributes"): 2,
+    ("attributes", "persona", "priorities"): 3,
+    ("attributes", "priorities", "persona"): 4,
+    ("priorities", "persona", "attributes"): 5,
+    ("priorities", "attributes", "persona"): 6,
+}
 
 # Display order for algo columns within each scenario.
 ALGO_COLUMNS = ["tournament", "utility", "full_batch", "baseline_random", "baseline_zscore", "human_rerank"]
 ALGO_DISPLAY = {
     "tournament":      "LISTEN-T",
     "utility":         "LISTEN-U",
-    "full_batch":      "full_batch",
-    "baseline_random": "baseline-random",
-    "baseline_zscore": "baseline-zscore",
-    "human_rerank":    "human rerank",
+    "full_batch":      "baseline/full-batch",
+    "baseline_random": "baseline/random",
+    "baseline_zscore": "baseline/zscore-avg",
+    "human_rerank":    "baseline/human-rerank",
 }
 ALGO_COLOR = {
-    "tournament":      "#1F77B4",
-    "utility":         "#E45756",
-    "full_batch":      "#9467BD",
-    "baseline_random": "#7F7F7F",
-    "baseline_zscore": "#BCBD22",
-    "human_rerank":    "#2CA02C",
+    "tournament":      "#1f77b4",
+    "utility":         "#ff7f0e",
+    "full_batch":      "#d62728",
+    "baseline_random": "#2ca02c",
+    "baseline_zscore": "#AA3377",
+    "human_rerank":    "#9467bd",
 }
+ALGO_MARKER = {
+    "tournament":      "^",
+    "utility":         "s",
+    "full_batch":      "P",
+    "baseline_random": "X",
+    "baseline_zscore": "D",
+    "human_rerank":    "v",
+}
+BASELINE_ALGOS = {"full_batch", "baseline_random", "baseline_zscore", "human_rerank"}
+
+
+def errorbar_style(algo: str) -> Dict[str, Any]:
+    zorder = 5 if algo in BASELINE_ALGOS else 3
+    return {
+        "markersize": 7,
+        "capsize": 2.5,
+        "elinewidth": 1.0,
+        "markeredgewidth": 0.8,
+        "markeredgecolor": "white",
+        "alpha": 0.9,
+        "zorder": zorder,
+    }
+
+
+def style_paper_axes(ax: Any, n_col: int) -> None:
+    ax.set_ylim(-0.12, 0.78)
+    ax.set_yticks(np.arange(-0.1, 0.71, 0.1))
+    ax.set_xlim(-0.5, n_col - 0.5)
+    for i in range(n_col):
+        if i % 2 == 0:
+            ax.axvspan(i - 0.5, i + 0.5, color="#f1f3f7", alpha=0.55, zorder=0)
+    for i in range(1, n_col):
+        ax.axvline(i - 0.5, color="#bcbcbc", linestyle=":", linewidth=0.7, zorder=1)
 
 
 def mean_and_2se(vals: List[float]) -> Tuple[float, float]:
@@ -69,6 +112,31 @@ def mean_and_2se(vals: List[float]) -> Tuple[float, float]:
         return mu, 0.0
     var = sum((v - mu) ** 2 for v in vals) / (n - 1)
     return mu, 2 * math.sqrt(var / n)
+
+
+def annotate_section_order(ax: Any, x: float, y: float, err: float, idx: int, color: str) -> None:
+    # Stagger odd indices above the upper error bar and even indices below the
+    # lower one. Halves visual density at clusters where the 6 section_orders
+    # land on nearly the same y (otherwise "123456" smushes into one blob).
+    if idx % 2 == 1:
+        anchor_y = y + err
+        offset_y = 6
+        va = "bottom"
+    else:
+        anchor_y = y - err
+        offset_y = -6
+        va = "top"
+    ax.annotate(
+        str(idx),
+        (x, anchor_y),
+        textcoords="offset points",
+        xytext=(0, offset_y),
+        ha="center",
+        va=va,
+        fontsize=9.5,
+        fontweight="bold",
+        color=color,
+    )
 
 
 _SCENARIOS_IN_COLUMNS = {scen for _c, scen, _m, _d in COLUMNS}
@@ -97,11 +165,8 @@ def collect_by_order(
     """Return {(column_id, algo_name, section_order_tuple_or_None): [nars...]}.
 
     Filters: api_model matches; tournament/full_batch runs at the given batch
-    size only. `tournament`/`utility`/`full_batch` runs are mode-specific
-    (must match the column's primary_mode). Baseline runs are mode-agnostic
-    and contribute to every column for their scenario; each baseline JSON
-    is expanded into a BaselineRandom and (when zscore_winner is non-null)
-    BaselineZscore variant.
+    size only. Each baseline JSON is expanded into a BaselineRandom and
+    (when zscore_winner is non-null) BaselineZscore variant.
     """
     data: Dict[Tuple[str, str, Tuple[str, ...] | None], List[float]] = defaultdict(list)
     raw_pairs: List[Tuple[Path, dict, object]] = []
@@ -164,9 +229,9 @@ def collect_by_order(
         for col_id, c_scen, primary_mode, _disp in COLUMNS:
             if c_scen != scen:
                 continue
-            # tournament/utility/full_batch are mode-specific; baseline variants
-            # are mode-agnostic and contribute to every column for their scenario.
-            if algo_name in ("tournament", "utility", "full_batch") and mode != primary_mode:
+            # NAR is scored against the run's mode-specific human_sol, so every
+            # algo, including baselines, must match the column's primary_mode.
+            if mode != primary_mode:
                 continue
             data[(col_id, algo_name, so_key)].append(nar)
     return data
@@ -210,7 +275,7 @@ def write_table(
                              f"{mu:.4f}", f"{err:.4f}"])
                 continue
             seen_orders = sorted({so for (c, a, so) in data if c == col_id and a == algo},
-                                 key=lambda t: ",".join(t) if t else "")
+                                 key=lambda t: SECTION_ORDER_INDEX.get(t, 99) if t else 0)
             for so in seen_orders:
                 vals = data.get((col_id, algo, so), [])
                 if not vals:
@@ -223,6 +288,128 @@ def write_table(
         writer = csv.writer(f)
         writer.writerows(rows)
     print(f"Saved table -> {out_path}")
+
+
+def read_summary_table(
+    path: Path,
+) -> Dict[Tuple[str, str, Tuple[str, ...] | None], Tuple[float, float, int]]:
+    """Read a previously emitted summary CSV.
+
+    This is used when a PR/checkpoint includes plot CSVs but not the raw JSON
+    runs. It can regenerate the PNG from the aggregated means and 2SE values.
+    """
+    import csv
+
+    column_by_label = {display: col_id for col_id, _s, _m, display in COLUMNS}
+    column_by_label["Flights Ithaca → Reston"] = "flights_ithaca_reston"
+    column_by_label["Flights Chicago → NYC"] = "flights_chi_nyc"
+    column_by_label["Headphones-MAIN"] = "headphones__MAIN"
+    summary: Dict[Tuple[str, str, Tuple[str, ...] | None], Tuple[float, float, int]] = {}
+
+    with path.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            col_label = row.get("column", "")
+            col_id = column_by_label.get(col_label, col_label)
+            algo = row.get("algo", "")
+            so_raw = row.get("section_order", "").strip()
+            so_key = tuple(part.strip() for part in so_raw.split(",") if part.strip()) if so_raw else None
+            try:
+                n = int(row.get("n", "0"))
+                mean = float(row.get("mean_nar", "nan"))
+                err = float(row.get("two_se", "nan"))
+            except ValueError:
+                continue
+            if n <= 0:
+                continue
+            summary[(col_id, algo, so_key)] = (mean, err, n)
+
+    return summary
+
+
+def plot_one_api_summary(
+    summary: Dict[Tuple[str, str, Tuple[str, ...] | None], Tuple[float, float, int]],
+    api_model: str,
+    out_path: Path,
+) -> None:
+    column_ids = [c for c, _s, _m, _d in COLUMNS]
+    column_labels = {c: d for c, _s, _m, d in COLUMNS}
+
+    used_algos: List[str] = []
+    for algo in ALGO_COLUMNS:
+        if any(c in column_ids and a == algo for (c, a, _so) in summary):
+            used_algos.append(algo)
+
+    if not used_algos:
+        print(f"[skip] no summary rows for api_model={api_model}")
+        return
+
+    n_col = len(column_ids)
+    n_algo = len(used_algos)
+    x_centers = np.arange(n_col)
+    algo_offsets = np.linspace(-0.4, 0.4, n_algo) if n_algo > 1 else np.array([0.0])
+
+    fig, ax = plt.subplots(figsize=(max(10, 2 * n_col + 2), 7.0))
+    legend_handles: Dict[str, Any] = {}
+    sub_jitter_spread = 0.085
+
+    for ai, algo in enumerate(used_algos):
+        color = ALGO_COLOR[algo]
+        marker = ALGO_MARKER[algo]
+        x_algo = x_centers + algo_offsets[ai]
+        for si, col_id in enumerate(column_ids):
+            orders = sorted(
+                [so for (c, a, so) in summary if c == col_id and a == algo],
+                key=lambda t: SECTION_ORDER_INDEX.get(t, 99) if t else 0,
+            )
+            if not orders:
+                continue
+            sub_offsets = (
+                np.linspace(-sub_jitter_spread, sub_jitter_spread, len(orders))
+                if len(orders) > 1 else np.array([0.0])
+            )
+            for oi, so in enumerate(orders):
+                mu, err, _n = summary[(col_id, algo, so)]
+                xi = x_algo[si] + sub_offsets[oi]
+                ax.errorbar(
+                    [xi], [mu], yerr=[err],
+                    fmt=marker, color=color, linewidth=0,
+                    label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
+                    **errorbar_style(algo),
+                )
+                idx = SECTION_ORDER_INDEX.get(so) if so is not None else None
+                if idx is not None:
+                    annotate_section_order(ax, xi, mu, err, idx, color)
+                legend_handles.setdefault(algo, True)
+
+    ax.set_xticks(x_centers)
+    ax.set_xticklabels([column_labels[c] for c in column_ids])
+    ax.tick_params(axis="x", labelsize=12)
+    ax.tick_params(axis="y", labelsize=11)
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=13)
+    style_paper_axes(ax, n_col)
+    ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
+    ax.legend(fontsize=10, loc="upper left", bbox_to_anchor=(0.005, 0.995),
+              frameon=True, framealpha=0.85, borderpad=0.35,
+              labelspacing=0.3, handletextpad=0.45, title=None)
+
+    needs_key = any(
+        so is not None and SECTION_ORDER_INDEX.get(so) is not None
+        for (_c, _a, so) in summary
+    )
+    if needs_key:
+        ordered = sorted(SECTION_ORDER_INDEX.items(), key=lambda kv: kv[1])
+        half = (len(ordered) + 1) // 2
+        line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[:half])
+        line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
+        fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=10.5, color="#444")
+        fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=10.5, color="#444")
+        fig.tight_layout(rect=(0, 0, 1.0, 0.93))
+    else:
+        fig.tight_layout()
+
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+    print(f"Saved -> {out_path}")
 
 
 def plot_one_api(
@@ -251,15 +438,16 @@ def plot_one_api(
     n_col = len(column_ids)
     n_algo = len(used_algos)
     x_centers = np.arange(n_col)
-    algo_offsets = np.linspace(-0.35, 0.35, n_algo) if n_algo > 1 else np.array([0.0])
+    algo_offsets = np.linspace(-0.4, 0.4, n_algo) if n_algo > 1 else np.array([0.0])
 
-    fig, ax = plt.subplots(figsize=(max(10, 2 * n_col + 2), 5.5))
+    fig, ax = plt.subplots(figsize=(max(10, 2 * n_col + 2), 7.0))
 
     legend_handles: Dict[str, Any] = {}
-    sub_jitter_spread = 0.08
+    sub_jitter_spread = 0.085
 
     for ai, algo in enumerate(used_algos):
         color = ALGO_COLOR[algo]
+        marker = ALGO_MARKER[algo]
         x_algo = x_centers + algo_offsets[ai]
         for si, col_id in enumerate(column_ids):
             if algo == "human_rerank":
@@ -269,19 +457,16 @@ def plot_one_api(
                 mu, err = mean_and_2se(vals)
                 ax.errorbar(
                     [x_algo[si]], [mu], yerr=[err],
-                    fmt="D", color=color, markersize=7, capsize=3,
-                    linewidth=0, elinewidth=1.2,
+                    fmt=marker, color=color, linewidth=0,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
+                    **errorbar_style(algo),
                 )
-                ax.annotate(f"n={len(vals)}", (x_algo[si], mu + err),
-                            textcoords="offset points", xytext=(0, 5),
-                            ha="center", fontsize=7, color=color)
                 legend_handles.setdefault(algo, True)
                 continue
 
-            # Gather all section_orders present for this (col_id, algo)
+            # Gather section_orders in canonical 1..6 order.
             orders = sorted([so for (c, a, so) in data if c == col_id and a == algo and data[(c, a, so)]],
-                            key=lambda t: ",".join(t) if t else "")
+                            key=lambda t: SECTION_ORDER_INDEX.get(t, 99))
             if not orders:
                 continue
             n_sub = len(orders)
@@ -292,22 +477,42 @@ def plot_one_api(
                 xi = x_algo[si] + sub_offsets[oi]
                 ax.errorbar(
                     [xi], [mu], yerr=[err],
-                    fmt="o", color=color, markersize=5, capsize=2.5,
-                    linewidth=0, elinewidth=1.0, alpha=0.85,
+                    fmt=marker, color=color, linewidth=0,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
+                    **errorbar_style(algo),
                 )
-                ax.annotate(f"n={len(vals)}", (xi, mu + err),
-                            textcoords="offset points", xytext=(0, 5),
-                            ha="center", fontsize=7, color=color)
+                idx = SECTION_ORDER_INDEX.get(so) if so is not None else None
+                if idx is not None:
+                    annotate_section_order(ax, xi, mu, err, idx, color)
                 legend_handles.setdefault(algo, True)
 
     ax.set_xticks(x_centers)
     ax.set_xticklabels([column_labels[c] for c in column_ids])
-    ax.set_ylabel("NAR (mean +/- 2 SE)")
-    ax.set_ylim(bottom=0)
+    ax.tick_params(axis="x", labelsize=12)
+    ax.tick_params(axis="y", labelsize=11)
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=13)
+    style_paper_axes(ax, n_col)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    ax.legend(fontsize=14, loc="upper left", title=None)
-    fig.tight_layout()
+    ax.legend(fontsize=10, loc="upper left", bbox_to_anchor=(0.005, 0.995),
+              frameon=True, framealpha=0.85, borderpad=0.35,
+              labelspacing=0.3, handletextpad=0.45, title=None)
+
+    needs_key = any(
+        so is not None and SECTION_ORDER_INDEX.get(so) is not None
+        for (_c, _a, so) in data
+        if data[(_c, _a, so)]
+    )
+    if needs_key:
+        ordered = sorted(SECTION_ORDER_INDEX.items(), key=lambda kv: kv[1])
+        half = (len(ordered) + 1) // 2
+        line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[:half])
+        line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
+        fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=10.5, color="#444")
+        fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=10.5, color="#444")
+        fig.tight_layout(rect=(0, 0, 1.0, 0.93))
+    else:
+        fig.tight_layout()
+
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
     print(f"Saved -> {out_path}")
@@ -317,7 +522,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data-dir", required=True, type=Path,
                     help="Run directory containing per-scenario subfolders of JSON outputs.")
-    ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "plots")
+    ap.add_argument("--output-dir", type=Path, default=ROOT / "outputs")
     ap.add_argument("--api-model", action="append", default=None,
                     help="Repeatable. If omitted, both groq and gemini are plotted.")
     ap.add_argument("--batch-size", type=int, default=32,
@@ -353,8 +558,15 @@ def main() -> None:
             stem = f"{api}__nar__scenario__by_algo"
         else:
             stem = f"{api}__nar__scenario__by_algo_orders"
+        csv_path = args.output_dir / f"{stem}.csv"
+        has_raw_data = any(vals for vals in data.values())
+        if not has_raw_data and csv_path.exists():
+            print(f"[summary] no raw JSON rows for api_model={api}; regenerating from {csv_path}")
+            summary = read_summary_table(csv_path)
+            plot_one_api_summary(summary, api, args.output_dir / f"{stem}.png")
+            continue
         plot_one_api(data, rerank, api, args.output_dir / f"{stem}.png")
-        write_table(data, rerank, args.output_dir / f"{stem}.csv")
+        write_table(data, rerank, csv_path)
 
 
 if __name__ == "__main__":

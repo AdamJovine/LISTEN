@@ -121,6 +121,10 @@ class UtilityPromptTemplate(PromptVariantMixin, PromptTemplateInterface):
         if not self.scenario_header:
             raise ValueError("Prompts config must define a 'scenario_header'.")
 
+        self.persona_context = self.prompts_config.get("persona_context", "")
+        self.attribute_definitions = self.prompts_config.get("attribute_definitions", "")
+        self.section_order = kwargs.get("section_order")
+
         # Get generic templates — supports both string (legacy) and dict (variants)
         utility_base_raw = self.prompts_config.get("utility_base")
         if not utility_base_raw:
@@ -166,7 +170,7 @@ class UtilityPromptTemplate(PromptVariantMixin, PromptTemplateInterface):
             self.utility_base_template = selected_template
             prompt = selected_template.replace(
                 "{scenario_header}",
-                self.scenario_header
+                self._resolve_scenario_block()
             )
             prompt = _apply_prompt_vars(prompt, self.prompt_vars)
             prompt = prompt.replace("{metric_weights_json}", self.metric_weights_json)
@@ -242,10 +246,25 @@ class UtilityPromptTemplate(PromptVariantMixin, PromptTemplateInterface):
 
     def get_base_prompt(self) -> str:
         template = self._base_variants[self._current_variant_index]
-        prompt = template.replace("{scenario_header}", self.scenario_header)
+        prompt = template.replace("{scenario_header}", self._resolve_scenario_block())
         prompt = _apply_prompt_vars(prompt, self.prompt_vars)
         prompt = prompt.replace("{metric_weights_json}", self.metric_weights_json)
         return prompt
+
+    def _resolve_scenario_block(self) -> str:
+        if not self.section_order:
+            return self.scenario_header
+        sections = {
+            "persona": self.persona_context,
+            "attributes": self.attribute_definitions,
+            "priorities": self.policy_guidance,
+        }
+        parts = [
+            (sections.get(name) or "").strip()
+            for name in self.section_order
+            if (sections.get(name) or "").strip()
+        ]
+        return "\n\n".join(parts)
 
     def get_base_prompt_variant_name(self) -> str:
         return self.get_variant_name()

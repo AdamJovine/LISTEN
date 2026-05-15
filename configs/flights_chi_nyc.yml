@@ -50,8 +50,10 @@ prompt_vars:
     - Is this the most optimal flight?
 
 prompts:
-  scenario_header: |
+  persona_context: |
     You are an expert travel scheduling agent that specializes in air fare.
+
+  attribute_definitions: |
     The data set is only for a one-way flight. In this case, it is the first leg of a round trip.
     Use these definitions:
     • name: name of airline operating the flight

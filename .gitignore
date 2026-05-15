@@ -39,7 +39,8 @@ build/
 .env
 
 outputs/*
-!outputs/paper__REPS40__iters25__seed1234__20260430_045057/
+!outputs/*.csv
+!outputs/*.png
 
 slurms/
 

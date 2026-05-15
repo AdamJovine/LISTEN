@@ -1,0 +1,6 @@
+column,scenario,primary_mode,LISTEN-T primary NAR,LISTEN-T BASE NAR,LISTEN-T primary_better,LISTEN-U primary NAR,LISTEN-U BASE NAR,LISTEN-U primary_better
+Flights Ithaca ¡ú Reston,flights_ithaca_reston,Complicated,0.045,0.135,yes,0.008,0.005,no
+Flights Chicago ¡ú NYC,flights_chi_nyc,Complicated_structured,0.431,0.485,yes,0.347,0.335,no
+Headphones-MAIN,headphones,MAIN,0.082,0.534,yes,0.623,0.623,no
+Headphones-SOFT,headphones,SOFT,0.178,0.338,yes,0.055,0.609,yes
+Exam Scheduling,exam,REGISTRAR,0.493,0.501,yes,0.358,0.426,yes

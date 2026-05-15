@@ -112,6 +112,7 @@ Common flags:
 | `--unique-rank-batch` | Ensure each tournament batch contains at least one `human_sol` index |
 | `--comparison-prompt-{strategy,variant,seed}` | Override comparison prompt selection (tournament/full_batch) |
 | `--utility-prompt-{strategy,variant,seed}`    | Override utility prompt selection (utility) |
+| `--section-order`   | Comma-separated order for `persona`, `attributes`, `priorities` prompt sections |
 | `--dry-run`         | Print resolved config + would-be output path, then exit (no LLM calls) |
 
 Each run writes a single JSON to
@@ -139,6 +140,19 @@ bash scripts/IJCAI_recreate.sh
 bash scripts/arXiv_recreate.sh
 ```
 
+The prompt section-order sensitivity sweep is separate from the paper
+reproduction workflow:
+
+```bash
+bash scripts/order_sensitivity_recreate.sh
+```
+
+That script runs all six permutations of `persona`, `attributes`, and
+`priorities`, then writes plots such as
+`outputs/groq__nar__scenario__by_algo_orders.png`.
+It defaults to Groq-only outputs for the open-source artifact set; set
+`API_MODELS=groq,gemini` once the Gemini sweep is complete.
+
 Optional env overrides accepted by both scripts:
 
 ```bash
@@ -154,6 +168,7 @@ bash scripts/IJCAI_recreate.sh
 | `BASE_SEED`    | Seed for the first replicate; later replicates use `BASE_SEED + i` |
 | `JOBS`         | Parallelism for `xargs -P`                                         |
 | `OUTPUT_ROOT`  | Existing run directory to resume into (default: timestamped path)  |
+| `API_MODELS`   | Section-order sweep models; default `groq`                         |
 
 Output layout (timestamp/stamp matches the run):
 
@@ -168,7 +183,9 @@ outputs/paper__REPS40__iters25__seed1234__<stamp>/
 
 Each script runs the experiment grid as a sequence of sections, each with a
 retry-until-target loop, and then generates the corresponding paper plots
-into `<OUTPUT_ROOT>/plots/`.
+directly under `outputs/`. Local run directories may still contain scratch
+`plots/` folders while experimenting, but the tracked open-source artifact
+bundle is the flat `outputs/*.png` and `outputs/*.csv` set.
 
 ## 6) Plots
 
@@ -180,10 +197,24 @@ All plot scripts can also be run standalone against any run directory:
 | Cross-scenario × algorithm (LISTEN-T, LISTEN-U, baseline, full-batch, human rerank) | `plotting/general_plot.py` with `--canonical_mode` | `--path <RUN>` |
 | Per-scenario batch-size sweep (B={2,4,8,16,32}) | `plotting/general_plot.py`                | `--path <RUN>`          |
 | Reorder (header_then_task vs task_then_header) | `plotting/plot_order_study.py` (PNG + CSV) | `--data-dir <RUN>`      |
+| Section-order sensitivity (persona/attributes/priorities) | `plotting/plot_orders_by_algo.py` (PNG + CSV) | `--data-dir <RUN>` |
 | Preference-utterance ablation (canonical vs BASE) | `plotting/plot_base_study.py` (PNG + CSV) | `--data-dir <RUN>`     |
 
 The cross-scenario plot overlays human-rerank baselines automatically by
 reading `input/rerank_*/`.
+
+To regenerate only the Groq section-order figure from an existing run:
+
+```bash
+python plotting/plot_orders_by_algo.py \
+  --data-dir outputs/<run-dir> \
+  --output-dir outputs \
+  --api-model groq \
+  --batch-size 32
+```
+
+If the raw JSON runs are absent but the matching summary CSV already exists in
+`outputs/`, the same command regenerates the PNG from that CSV.
 
 ## 7) Tests
 

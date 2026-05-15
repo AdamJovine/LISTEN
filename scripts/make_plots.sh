@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
-# Generate every plot that the existing plotting scripts can produce from
-# the runs in the resume_paper output directory.
-#
-# Current sweep is tournament-only: section-order @ B=32 across 9 pairs and
-# a batch-size sweep over the 4 canonical pairs. Skipped scripts:
-#   - headphones_plot.py: needs LISTEN-U (utility) data — not in this sweep.
-#   - plot_order_study.py: compares header_then_task_v1 vs task_then_header_v1
-#     but the new sweep only has the former.
+# Generate the order-sensitivity plots from a run directory.
 #
 # Usage:
-#   bash scripts/make_plots.sh
+#   OUTPUT_ROOT=outputs/<run-dir> bash scripts/make_plots.sh
+#
+# If OUTPUT_ROOT is omitted, the latest matching directory under outputs/ is
+# used. API_MODEL defaults to groq; set API_MODEL=gemini or
+# API_MODEL=groq,gemini after the other model's runs are complete.
 
 set -euo pipefail
 
@@ -17,54 +14,81 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 
-OUTPUT_ROOT="${OUTPUT_ROOT:-/Users/adamjovine/Documents/IJCAI/LISTEN-IJCAI/outputs/paper__REPS40__iters25__seed1234__20260511_163727}"
-PLOT_DIR="${PLOT_DIR:-${OUTPUT_ROOT}/plots}"
+if [[ -z "${OUTPUT_ROOT:-}" ]]; then
+  if [[ ! -d "${REPO_ROOT}/outputs" ]]; then
+    echo "[ERR] Set OUTPUT_ROOT=<run directory>; ${REPO_ROOT}/outputs does not exist." >&2
+    exit 1
+  fi
+  shopt -s nullglob
+  candidates=(
+    "${REPO_ROOT}/outputs"/order_sensitivity__*
+    "${REPO_ROOT}/outputs"/paper__REPS*
+  )
+  if [[ ${#candidates[@]} -eq 0 ]]; then
+    echo "[ERR] Set OUTPUT_ROOT=<run directory>; no matching outputs were found." >&2
+    exit 1
+  fi
+  latest_output="$(ls -td -- "${candidates[@]}" | head -n 1)"
+  OUTPUT_ROOT="${latest_output}"
+fi
+
+PLOT_DIR="${PLOT_DIR:-${REPO_ROOT}/outputs}"
 mkdir -p "${PLOT_DIR}"
 
-MAIN_BATCH_SIZE=32
+MAIN_BATCH_SIZE="${MAIN_BATCH_SIZE:-32}"
+DEFAULT_ORDER="${DEFAULT_ORDER:-persona,attributes,priorities}"
+API_MODEL="${API_MODEL:-groq}"
+
+api_args=()
+IFS="," read -ra api_models <<<"${API_MODEL}"
+for api in "${api_models[@]}"; do
+  api="${api//[[:space:]]/}"
+  [[ -n "${api}" ]] && api_args+=(--api-model "${api}")
+done
+
+general_api_value="${API_MODEL}"
+if [[ "${API_MODEL}" == *","* ]]; then
+  general_api_value="all"
+fi
 
 echo "[OUTPUT_ROOT] ${OUTPUT_ROOT}"
 echo "[PLOT_DIR]    ${PLOT_DIR}"
 echo
 
-# Plot 1: Per-scenario × batch sizes (tournament)
-echo "═══ [PLOT 1] Per-scenario × batch sizes (tournament) ═══"
+echo "=== [PLOT 1] Per-scenario by batch size (tournament) ==="
 "${PYTHON_BIN}" "${REPO_ROOT}/plotting/general_plot.py" \
   --path "${OUTPUT_ROOT}" \
   --output-dir "${PLOT_DIR}" \
-  --x_large algo tournament scenario all mode all api_model all \
+  --x_large algo tournament scenario all mode all api_model "${general_api_value}" \
   --x_medium batch_size all \
   --y nar \
-  || echo "[WARN] PLOT 2 failed"
+  || echo "[WARN] PLOT 1 failed"
 
-# Plot 2: Cross-scenario × algo @ B=MAIN_BATCH_SIZE, default section order
-# (one aggregate point per algo per column).
-echo "═══ [PLOT 2] Cross-scenario × algo @ B=${MAIN_BATCH_SIZE}, default order ═══"
+echo "=== [PLOT 2] Cross-scenario by algo @ B=${MAIN_BATCH_SIZE}, default order ==="
 "${PYTHON_BIN}" "${REPO_ROOT}/plotting/plot_orders_by_algo.py" \
   --data-dir "${OUTPUT_ROOT}" \
   --output-dir "${PLOT_DIR}" \
   --batch-size "${MAIN_BATCH_SIZE}" \
-  --section-order "persona,attributes,priorities" \
+  --section-order "${DEFAULT_ORDER}" \
   --aggregate-orders \
+  "${api_args[@]}" \
   || echo "[WARN] PLOT 2 failed"
 
-# Plot 2b: Cross-scenario × algo, one sub-point per section_order
-echo "═══ [PLOT 2b] Cross-scenario × algo × section_order @ B=${MAIN_BATCH_SIZE} ═══"
+echo "=== [PLOT 2b] Cross-scenario by algo and section order @ B=${MAIN_BATCH_SIZE} ==="
 "${PYTHON_BIN}" "${REPO_ROOT}/plotting/plot_orders_by_algo.py" \
   --data-dir "${OUTPUT_ROOT}" \
   --output-dir "${PLOT_DIR}" \
   --batch-size "${MAIN_BATCH_SIZE}" \
+  "${api_args[@]}" \
   || echo "[WARN] PLOT 2b failed"
 
-# Plot 3: BASE vs canonical mode (tournament traces only; utility absent)
-# Pinned to B=32 + default section order so each bar averages exactly 40 reps
-# of one configuration, isolating the BASE-vs-canonical effect.
-echo "═══ [PLOT 3] BASE vs canonical mode @ B=${MAIN_BATCH_SIZE}, default order ═══"
+echo "=== [PLOT 3] BASE vs canonical mode @ B=${MAIN_BATCH_SIZE}, default order ==="
 "${PYTHON_BIN}" "${REPO_ROOT}/plotting/plot_base_study.py" \
   --data-dir "${OUTPUT_ROOT}" \
   --output-dir "${PLOT_DIR}" \
   --batch-size "${MAIN_BATCH_SIZE}" \
-  --section-order "persona,attributes,priorities" \
+  --section-order "${DEFAULT_ORDER}" \
+  "${api_args[@]}" \
   || echo "[WARN] PLOT 3 failed"
 
 echo

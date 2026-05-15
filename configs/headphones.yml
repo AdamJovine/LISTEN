@@ -67,8 +67,10 @@ prompt_vars:
   utility_key_rule: ""
 
 prompts:
-  scenario_header: |
+  persona_context: |
     You are an audio equipment reviewer choosing the best headphones.
+
+  attribute_definitions: |
     Use these definitions:
     - product_name: name of the product (non-metric, weight always 0).
     - brand: manufacturer reputaton (non-metric, weight always 0).
