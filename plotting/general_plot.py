@@ -44,6 +44,7 @@ from plotting_helpers import (
     get_metric_display_name,
     get_field_display_name,
     get_field_value,
+    get_reps_cap,
     load_algo,
     METRIC_FUNCTIONS,
 )
@@ -214,6 +215,7 @@ def generate_plot_with_filters(
     show: bool = False,
     canonical_mode: bool = False,
     per_algo_filters: Dict[str, Dict[str, Any]] | None = None,
+    reps_cap: int | None = 40,
 ) -> None:
     """Generate a single plot with the given filters applied."""
     # Filter algos to those matching ALL filter conditions
@@ -261,7 +263,10 @@ def generate_plot_with_filters(
     print(f"Plotting {len(filtered_algos)} experiments for {filter_str}")
 
     # Aggregate data
-    agg_data = aggregate_by_field(filtered_algos, x_medium_field, y_metric, x_small_field)
+    agg_data = aggregate_by_field(
+        filtered_algos, x_medium_field, y_metric, x_small_field,
+        reps_cap=reps_cap,
+    )
 
     # Build title from filters
     title_parts = []
@@ -352,7 +357,12 @@ Metrics: accuracy, nar, gtu
         "--per_algo_filter", nargs=3, action="append", metavar=("ALGO", "FIELD", "VALUE"),
         help="Apply a filter only for a specific algo. E.g., '--per_algo_filter tournament batch_size 8'"
     )
+    ap.add_argument(
+        "--reps-cap", type=int, default=40,
+        help="Maximum runs per plotted cell before aggregation (default: 40; 0 disables)."
+    )
     args = ap.parse_args()
+    reps_cap = get_reps_cap(args)
 
     # Parse x_large argument as field-value pairs (optional)
     # E.g., "api_model groq scenario flights_ithaca_reston" -> {api_model: groq, scenario: flights_ithaca_reston}
@@ -512,6 +522,7 @@ Metrics: accuracy, nar, gtu
                 all_algos, filters, x_medium_field, x_small_field, args.y, output_dir, args.show,
                 canonical_mode=args.canonical_mode,
                 per_algo_filters=per_algo_filters or None,
+                reps_cap=reps_cap,
             )
     else:
         # Single plot with all filters applied
@@ -520,6 +531,7 @@ Metrics: accuracy, nar, gtu
             all_algos, filters, x_medium_field, x_small_field, args.y, output_dir, args.show,
             canonical_mode=args.canonical_mode,
             per_algo_filters=per_algo_filters or None,
+            reps_cap=reps_cap,
         )
 
 

@@ -21,10 +21,14 @@ import numpy as np
 from plotting_helpers import (
     aggregate_algo_series,
     build_output_path,
+    get_reps_cap,
     load_algo,
     scenario_outputs_root,
     compute_mean_and_stderr,
 )
+
+LISTEN_T_COLOR = "#1f77b4"
+LISTEN_U_COLOR = "#ff7f0e"
 
 if TYPE_CHECKING:
     from experiment import Experiment as AlgorithmClass
@@ -92,20 +96,23 @@ def headphones_plot(args: argparse.Namespace):
 
     base_dir = scenario_outputs_root(args.scenario, args.output_dir)
 
-    # If no mode specified, find all available modes FOR THIS SCENARIO
+    # If no mode specified, compare only the canonical headphones plot modes.
     if args.mode is None:
-        modes = set()
-        for json_file in base_dir.glob("**/*.json"):
-            try:
-                algo = load_algo(json_file)
-                # Only include modes that match the scenario
-                if algo.get_scenario() == args.scenario:
-                    mode = algo.get_mode()
-                    if mode:
-                        modes.add(mode)
-            except:
-                pass
-        modes = sorted(modes)
+        if args.scenario == "headphones":
+            modes = ["MAIN", "SOFT"]
+        else:
+            available_modes = set()
+            for json_file in base_dir.glob("**/*.json"):
+                try:
+                    algo = load_algo(json_file)
+                    # Only include modes that match the scenario
+                    if algo.get_scenario() == args.scenario:
+                        mode = algo.get_mode()
+                        if mode:
+                            available_modes.add(mode)
+                except:
+                    pass
+            modes = sorted(available_modes)
     else:
         modes = [args.mode]
 
@@ -116,6 +123,7 @@ def headphones_plot(args: argparse.Namespace):
 
     # Collect results for each mode and algorithm
     results = {}
+    reps_cap = get_reps_cap(args)
     for mode in modes:
         results[mode] = {}
         for algo_name in ["tournament", "utility"]:
@@ -128,6 +136,7 @@ def headphones_plot(args: argparse.Namespace):
                     args_copy.batch_size = 8
             else:
                 args_copy.batch_size = None
+            args_copy.reps_cap = reps_cap
 
             agg = aggregate_algo_series(args_copy, _compute_normalized_avg_rank, recursive=True)
             y = agg.mean[0]
@@ -144,9 +153,9 @@ def headphones_plot(args: argparse.Namespace):
     utility_errs = [results[mode]["utility"][1] for mode in modes]
 
     bars1 = plt.bar(x - width/2, tournament_heights, width, yerr=tournament_errs,
-                    capsize=4, alpha=0.7, color="#517ba5", label="LISTEN-T")
+                    capsize=4, color=LISTEN_T_COLOR, label="LISTEN-T")
     bars2 = plt.bar(x + width/2, utility_heights, width, yerr=utility_errs,
-                    capsize=4, alpha=0.7, color="#e8924a", label="LISTEN-U")
+                    capsize=4, color=LISTEN_U_COLOR, label="LISTEN-U")
 
     # Add sample sizes on bars
     for i, (bar1, bar2) in enumerate(zip(bars1, bars2)):
@@ -158,7 +167,11 @@ def headphones_plot(args: argparse.Namespace):
         plt.text(bar2.get_x() + bar2.get_width()/2, bar2.get_height() + utility_errs[i] + 0.02,
                 f'n={n2}', ha='center', va='bottom', fontsize=8)
 
-    plt.xticks(x, [f"{args.scenario.title()}-{mode.replace('_', ' ').title()}" for mode in modes])
+    mode_display = {
+        "MAIN": "Headphones",
+        "SOFT": "Headphones-Soft",
+    }
+    plt.xticks(x, [mode_display.get(mode, f"{args.scenario.title()}-{mode.replace('_', ' ').title()}") for mode in modes])
     plt.ylabel("Normalized Average Rank (mean +/- 2SE)")
     plt.ylim(0, max(tournament_heights + utility_heights) * 1.25)
     plt.grid(True, axis="y", alpha=0.3)
@@ -199,6 +212,7 @@ def layout_comparison_plot(args: argparse.Namespace):
         lambda: defaultdict(lambda: defaultdict(list))
     )
     all_modes: set = set()
+    reps_cap = get_reps_cap(args)
 
     for layout_dir in layout_dirs:
         layout_name = Path(layout_dir).name
@@ -232,7 +246,9 @@ def layout_comparison_plot(args: argparse.Namespace):
 
             xs, ys, _ = _compute_normalized_avg_rank(algo)
             if ys:
-                data[layout_name][mode][algo_key].append(ys[0])
+                vals = data[layout_name][mode][algo_key]
+                if reps_cap is None or len(vals) < reps_cap:
+                    vals.append(ys[0])
                 all_modes.add(mode)
 
     if not data:
@@ -270,7 +286,7 @@ def layout_comparison_plot(args: argparse.Namespace):
 
     fig, ax = plt.subplots(figsize=(max(10, len(bar_specs) * 0.9), 5))
 
-    color_map = {"tournament": "#517ba5", "utility": "#e8924a"}
+    color_map = {"tournament": LISTEN_T_COLOR, "utility": LISTEN_U_COLOR}
     label_map = {"tournament": "LISTEN-T", "utility": "LISTEN-U"}
     legend_seen = set()
 
@@ -351,6 +367,8 @@ Examples:
     ap.add_argument("--mode", help="Scenario mode filter. If not specified, plots all modes found in data.")
     ap.add_argument("--iterations", type=int, help="Total iterations filter.")
     ap.add_argument("--batch-size", dest="batch_size", type=int, help="Batch size filter.")
+    ap.add_argument("--reps-cap", dest="reps_cap", type=int, default=40,
+                    help="Maximum runs per plotted cell before aggregation (default: 40; 0 disables).")
     ap.add_argument("--api-model", help="API model filter.")
     ap.add_argument("--model-name", help="Model name filter.")
     ap.add_argument("--output-dir", dest="output_dir", help="Directory containing experiment JSON files.")

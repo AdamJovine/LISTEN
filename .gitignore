@@ -44,6 +44,11 @@ outputs/*
 !outputs/paper__REPS40__iters25__seed1234__20260511_163727/
 outputs/paper__REPS40__iters25__seed1234__20260511_163727/*
 !outputs/paper__REPS40__iters25__seed1234__20260511_163727/plots/
+# Canonical committed plots (png/csv) under outputs/plots/.
+!outputs/plots/
+outputs/plots/*
+!outputs/plots/*.csv
+!outputs/plots/*.png
 
 slurms/
 

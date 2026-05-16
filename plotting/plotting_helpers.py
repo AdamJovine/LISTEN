@@ -48,6 +48,14 @@ def compute_mean_and_stderr(vals: List[float]) -> Tuple[float, float]:
     return (mean, stderr)
 
 
+def get_reps_cap(args: argparse.Namespace, default: int | None = 40) -> int | None:
+    cap = getattr(args, "reps_cap", default)
+    if cap is None:
+        return None
+    cap = int(cap)
+    return cap if cap > 0 else None
+
+
 def add_common_plot_args(ap: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """Wire up shared CLI filters for plotting scripts."""
     ap.add_argument("--algo", default="tournament", choices=["tournament", "utility", "full_batch", "baseline"], help="Algorithm filter.")
@@ -60,6 +68,8 @@ def add_common_plot_args(ap: argparse.ArgumentParser) -> argparse.ArgumentParser
     ap.add_argument("--output-dir", dest="output_dir", help="Custom input directory to read data from (default: outputs/<scenario>).")
     ap.add_argument("--save-dir", dest="save_dir", help="Directory to save plots (default: outputs/plots).")
     ap.add_argument("--output", dest="output", help="Explicit output file path for the plot (overrides --save-dir).")
+    ap.add_argument("--reps-cap", dest="reps_cap", type=int, default=40,
+                    help="Maximum runs per plotted cell before aggregation (default: 40; 0 disables).")
     ap.add_argument("--show", action="store_true", help="Display plot interactively.")
     return ap
 
@@ -155,7 +165,7 @@ def iter_matching_payloads(
     """Iterate over matching payloads (legacy compatibility)."""
     output_dir = getattr(args, "output_dir", None)
     base = out_root or scenario_outputs_root(args.scenario, output_dir)
-    for path in base.glob("**/*.json"):
+    for path in sorted(base.glob("**/*.json")):
         payload = load_payload(path)
         meta = payload.get("meta") or {}
         if matches_meta(meta, args):
@@ -169,7 +179,7 @@ def iter_matching_algos(
     output_dir = getattr(args, "output_dir", None)
     base = out_root or scenario_outputs_root(args.scenario, output_dir)
     pattern = "**/*.json" if recursive else "*.json"
-    for path in base.glob(pattern):
+    for path in sorted(base.glob(pattern)):
         try:
             algo = load_algo(path)
             if matches_algo(algo, args):
@@ -187,8 +197,11 @@ def aggregate_iteration_series(
     matched = 0
     meta_sample: Dict[str, Any] = {}
     extra_info: Dict[str, Any] = {}
+    reps_cap = get_reps_cap(args)
 
     for _, payload, meta in iter_matching_payloads(args, out_root):
+        if reps_cap is not None and matched >= reps_cap:
+            break
         xs, ys, info = compute_fn(payload)
         if not xs or not ys:
             continue
@@ -222,8 +235,11 @@ def aggregate_algo_series(
     matched = 0
     algo_sample: "Experiment | None" = None
     extra_info: Dict[str, Any] = {}
+    reps_cap = get_reps_cap(args)
 
     for _, algo in iter_matching_algos(args, out_root, recursive=recursive):
+        if reps_cap is not None and matched >= reps_cap:
+            break
         xs, ys, info = compute_fn(algo)
         if not xs or not ys:
             continue
@@ -333,12 +349,12 @@ ALGO_DISPLAY_NAMES = {
 
 # Color mapping for algorithms
 ALGO_COLORS = {
-    "TournamentExperiment": "blue",
-    "UtilityExperiment": "orange",
-    "BaselineRandom": "green",
-    "BaselineZscore": "maroon",
-    "BaselineRerank": "purple",
-    "FullBatchExperiment": "red",
+    "TournamentExperiment": "#1f77b4",
+    "UtilityExperiment": "#ff7f0e",
+    "BaselineRandom": "#2ca02c",
+    "BaselineZscore": "#AA3377",
+    "BaselineRerank": "#9467bd",
+    "FullBatchExperiment": "#d62728",
 }
 
 
@@ -608,6 +624,7 @@ def aggregate_by_field(
     x_field: str,
     y_metric: str,
     group_field: "str | None" = None,
+    reps_cap: int | None = 40,
 ) -> Dict[str, Any]:
     """Aggregate metric values grouped by x_field (and optionally group_field)."""
     metric_fn = METRIC_FUNCTIONS.get(y_metric)
@@ -627,7 +644,9 @@ def aggregate_by_field(
             continue
 
         group_val = get_field_value(algo, group_field) if group_field else "_all"
-        data[x_val][group_val or "unknown"].append(y_val)
+        vals = data[x_val][group_val or "unknown"]
+        if reps_cap is None or len(vals) < reps_cap:
+            vals.append(y_val)
 
     if not data:
         raise RuntimeError(f"No data found for x={x_field}, y={y_metric}")
