@@ -39,11 +39,8 @@ build/
 .env
 
 outputs/*
-# Whitelist only the plots subdir of the current sweep (raw JSONs ship as a Release asset).
-!outputs/paper__REPS40__iters25__seed1234__20260511_163727/
-outputs/paper__REPS40__iters25__seed1234__20260511_163727/*
-!outputs/paper__REPS40__iters25__seed1234__20260511_163727/plots/
 # Canonical committed plots (png/csv) under outputs/plots/.
+# Raw JSON sweep outputs ship as GitHub Release assets, not in git.
 !outputs/plots/
 outputs/plots/*
 !outputs/plots/*.csv
