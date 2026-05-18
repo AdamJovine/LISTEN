@@ -1,0 +1,14 @@
+name: listen
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pandas
+  - numpy
+  - matplotlib
+  - pyyaml
+  - pytest
+  - pip:
+      - groq
+      - google-genai

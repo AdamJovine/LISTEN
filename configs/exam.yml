@@ -1,0 +1,94 @@
+tag: exam
+data_csv: input/exam_data.csv
+metric_columns:
+  - conflicts
+  - quints
+  - quads
+  - four in five slots
+  - triple in 24h (no gaps)
+  - triple in same day (no gaps)
+  - three in four slots
+  - evening/morning b2b
+  - other b2b
+  - two in three slots
+  - avg_max
+
+metric_signs:
+  conflicts: -1
+  quints: -1
+  quads: -1
+  four in five slots: -1
+  triple in 24h (no gaps): -1
+  triple in same day (no gaps): -1
+  three in four slots: -1
+  evening/morning b2b: -1
+  other b2b: -1
+  two in three slots: -1
+  avg_max: -1
+
+prompt_vars:
+  comparison_noun: schedule
+  utility_priorities: "priorities for student welfare and administrative efficiency"
+  utility_domain: "exam schedule evaluation"
+  best_item_found: "SCHEDULE FOUND"
+  best_item_ref: "best schedule"
+  analysis_questions: |
+    - Does this schedule seem reasonable for student welfare and administrative efficiency?
+    - Are any metrics concerning given their severity levels?
+    - Should any penalties be increased or decreased?
+
+prompts:
+  persona_context: |
+    You are an expert university registrar choosing the best final-exam schedule.
+
+  attribute_definitions: |
+    Use these definitions (lower is better unless stated otherwise):
+    • conflicts: 2 exams at the same time (requires makeup)
+    • quints: 5 in a row (requires makeup)
+    • quads: 4 in a row (requires makeup)
+    • four in five slots: 4 within 5 (requires makeup)
+    • triple in 24h (no gaps): 3 within 24h, consecutive (requires makeup)
+    • triple in same day (no gaps): 3 in one day, consecutive (requires makeup)
+    • three in four slots: 3 within 4 slots
+    • evening/morning b2b: evening into next morning
+    • other b2b: any other back-to-back pair
+    • two in three slots: 2 within 3 slots
+    • avg_max: average slot of each student's last exam (lower is earlier finish)
+
+# Modes for exam scenario
+default_mode: REGISTRAR
+modes:
+  BASE:
+    prompt: >
+  REGISTRAR:
+    prompt: >
+      *Objective:* To generate an optimal final examination schedule that minimizes student stress and administrative burden by optimizing a specific set of metrics according to a tiered priority system. 
+      *Context:* There are three exam slots available per day. Solutions must have a conflicts value of 0 or 1. 
+      *Tier 1:* Minimize Mandatory Reschedules The highest priority is to minimize the metrics associated with intense exam clusters that require a mandatory reschedule. Please minimize the following metrics in the order listed: quints (five exams in 24 hours) quads (four exams in 24 hours) four in five slots triple in 24h (no gaps) triple in same day (no gaps) 
+      *Tier 2:* Reduce Student Exam Fatigue Once Tier 1 objectives have been met, the primary tie-breaker is to minimize the total number of back-to-back exams. This objective is achieved by minimizing the sum of the following two metrics: evening/morning b2b other b2b 
+      *Tier 3:* Enhance Overall Schedule Quality As a final set of tie-breakers, prioritize schedules that improve the general student experience by optimizing these metrics in order of preference: Lower the avg_max (the average slot of a student's final exam). Minimize two in three slots. Minimize three in four slots.
+    weights:
+      conflicts: -0.010966
+      quints: -0.202926
+      quads: 0.059445
+      four in five slots: -0.002785
+      triple in 24h (no gaps): -0.128615
+      triple in same day (no gaps): 0.016317
+      three in four slots: -0.007103
+      evening/morning b2b: 0.048622
+      other b2b: 0.059812
+      two in three slots: -0.054344
+      avg_max: -0.023368
+    human_sol: [
+      1519,
+      4344,
+      2091,
+      2620,
+      1527,
+      3444,
+      71,
+      4719,
+      2194,
+      4771, 
+      4392
+    ]
