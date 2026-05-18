@@ -2,11 +2,32 @@
 
 This repository contains the code and configuration files needed to reproduce
 the experiments and figures in the LISTEN paper. Two LLM APIs are supported:
-**Groq** (Llama 3.3 70B) and **Google Gemini** (via Vertex AI). Four
+**Groq** (Llama 3.3 70B) and **Google Gemini** (default model:
+`gemini-2.5-flash-lite`). Four
 algorithms are included: `tournament` (LISTEN-T), `utility` (LISTEN-U),
 `baseline` (random + z-score variants), and `full_batch`.
 
-## Repository layout
+## TL;DR — reproducing the paper
+
+After setting up the environment (§2) and API keys (§3), the **entire** paper
+is reproduced by running one of two top-level driver scripts from the
+repository root:
+
+```bash
+bash scripts/arXiv_recreate.sh    # arXiv version: all runs + all plots
+bash scripts/IJCAI_recreate.sh    # IJCAI submission: same runs, IJCAI plot subset
+```
+
+Each script runs all experiments and then generates the corresponding paper
+plots. No other commands are needed. Both scripts are resume-safe: they read
+existing run JSONs in `OUTPUT_ROOT`, count completed reps per cell, and only
+launch what's missing. See §5 for knobs (`TARGET_REPS`, `JOBS`,
+`OUTPUT_ROOT`, …).
+
+Both scripts are Linux/macOS only (they use bash-only features like
+`xargs -P`); on Windows, run them under WSL.
+
+## 1) Repository layout
 
 ```
 .
@@ -24,12 +45,11 @@ algorithms are included: `tournament` (LISTEN-T), `utility` (LISTEN-U),
 ├── input/                  # CSV data for each scenario + human-rerank rankings
 ├── plotting/               # Figure-generation scripts
 ├── post_analysis/          # Concordance metric (paper §4.1) + sweep helpers
-├── scripts/                # Bash drivers for paper experiments
-├── tools/                  # One-shot helpers (e.g. legacy-output rename)
+├── scripts/                # arXiv_recreate.sh + IJCAI_recreate.sh
 └── tests/                  # pytest suite
 ```
 
-## 1) Environment
+## 2) Environment
 
 ```bash
 conda env create -f environment.yml
@@ -40,7 +60,7 @@ conda activate listen
 no separate `requirements.txt`; if you need a pip-only install, mirror the
 package list from `environment.yml`.
 
-## 2) API keys
+## 3) API keys
 
 Create a `.env` file in the repo root:
 
@@ -53,9 +73,10 @@ GOOGLE_API_KEY="<your_google_key>"   # alias accepted for Gemini
 Gemini is accessed via the `google-genai` SDK (the legacy
 `google-generativeai` package is end-of-life and no longer used). Both
 `GEMINI_API_KEY` and `GOOGLE_API_KEY` are honoured. Vertex AI is used only
-when logprobs are explicitly requested.
+when logprobs are explicitly requested. The default Gemini model is
+`gemini-2.5-flash-lite`.
 
-## 3) Scenarios
+## 4) Scenarios
 
 Each scenario lives in `configs/<scenario>.yml`. The paper uses these four
 scenarios, each with a canonical mode:
@@ -80,7 +101,105 @@ Mapping to paper terminology:
 | Headphones                  | `headphones` / `MAIN`                    |
 | Headphones-Soft (§4.5)      | `headphones` / `SOFT`                    |
 
-## 4) Single run
+## 5) Reproducing the paper — script details
+
+`scripts/arXiv_recreate.sh` and `scripts/IJCAI_recreate.sh` share the same
+Stage 1 experiment grid and differ only in their Stage 2 plot output.
+
+**Stage 1 — experiments.** Three sections, all resume-by-metadata:
+
+- **Section 0:** `utility` (6 section orders) + `baseline` + `full_batch`, on
+  9 (scenario, mode) pairs × 2 APIs.
+- **Section 1:** `tournament` section-order sweep at B=32, 6 orders × 9 pairs
+  × 2 APIs.
+- **Section 2:** `tournament` batch-size sweep B ∈ {2, 4, 8, 16, 32}, 4
+  canonical pairs × 2 APIs.
+
+After Section 0 a dedupe pass keeps `zscore_winner` in exactly one baseline
+JSON per (scenario, mode, api) group (z-score is deterministic).
+
+**Stage 2 — plots.** Both scripts write into `outputs/plots/`. `arXiv` emits
+the full plot set; `IJCAI` emits the subset that appears in the IJCAI
+submission.
+
+| Plot                                                                | Script                            | arXiv | IJCAI |
+|---------------------------------------------------------------------|-----------------------------------|:-----:|:-----:|
+| Per-scenario tournament batch-size sweep                            | `plotting/general_plot.py`        |  ✓    |   ✓   |
+| Cross-scenario × algorithm, aggregated over orders (groq + gemini)  | `plotting/plot_orders_by_algo.py` |  ✓    |   ✓   |
+| Cross-scenario × algorithm × section order (groq + gemini)          | `plotting/plot_orders_by_algo.py` |  ✓    |       |
+| Cross-scenario × algorithm × section order (groq only)              | `plotting/plot_orders_by_algo.py` |       |   ✓   |
+| BASE vs canonical preference-utterance ablation                     | `plotting/plot_base_study.py`     |  ✓    |       |
+| Headphones LISTEN-T vs LISTEN-U @ B=8 (both APIs)                   | `plotting/headphones_plot.py`     |  ✓    |       |
+| Headphones LISTEN-T vs LISTEN-U @ B=8 (groq only)                   | `plotting/headphones_plot.py`     |       |   ✓   |
+
+`plot_orders_by_algo.py` overlays the human-rerank baselines automatically
+by reading `input/rerank_*/`.
+
+**Optional env overrides** accepted by both scripts:
+
+```bash
+TARGET_REPS=40 ITERS=25 BASE_SEED=1234 JOBS=4 \
+OUTPUT_ROOT=outputs/<existing-run>      # set to resume an in-progress run
+bash scripts/arXiv_recreate.sh
+```
+
+| Variable       | Purpose                                                            |
+|----------------|--------------------------------------------------------------------|
+| `TARGET_REPS`  | Successful repetitions per cell of the experiment grid             |
+| `ITERS`        | LLM calls per run (`--iterations`)                                 |
+| `BASE_SEED`    | Per-cell first replicate seed; later reps use `BASE_SEED + i`       |
+| `JOBS`         | Per-API-lane concurrency for `xargs -P` (groq and gemini lanes always run in parallel) |
+| `OUTPUT_ROOT`  | Existing run directory to resume into (default: timestamped path)  |
+| `PLOT_DIR`     | Plot destination (default `outputs/plots`)                         |
+| `SKIP_RUNS=1`  | Skip Stage 1 and only re-generate plots from an existing `OUTPUT_ROOT` |
+
+**Output layout** (timestamp/stamp matches the run):
+
+```
+outputs/paper__REPS40__iters25__seed1234__<stamp>/
+├── exam/                       all exam runs (every algo / mode / batch / order)
+├── flights_chi_nyc/            all flights_chi_nyc runs
+├── flights_ithaca_reston/      all flights_ithaca_reston runs
+└── headphones/                 all headphones runs
+outputs/plots/                  generated plots + CSV tables
+```
+
+Each script-run JSON is written to
+`OUTPUT_ROOT/<scenario>/<scenario>__<algo>__<mode>__api<...>__<...>.json`
+containing the winner, NAR, GTU, full iteration history, and a snapshot of
+the resolved config.
+
+**Pre-computed sweep outputs.** The exact JSON outputs for the
+`paper__REPS40__iters25__seed1234__20260511_163727` sweep cited in the
+paper are published as per-scenario gzipped tarballs on the
+[`runs-20260511-163727` GitHub Release](https://github.com/AdamJovine/LISTEN/releases/tag/runs-20260511-163727)
+(~650 MB compressed, ~7.3 GB and ~11,800 JSONs uncompressed). The
+raw JSONs are intentionally not committed to git; the canonical plots
+they produce live under `outputs/plots/`. To skip Stage 1 and
+regenerate only the plots from the released outputs:
+
+```bash
+RUN=outputs/paper__REPS40__iters25__seed1234__20260511_163727
+mkdir -p "$RUN" && (cd "$RUN" && \
+  for a in exam.tar.gz flights_chi_nyc.tar.gz \
+           flights_ithaca_reston.tar.gz headphones.tar.gz; do
+    gh release download runs-20260511-163727 --pattern "$a" --clobber
+    tar -xzf "$a" && rm "$a"
+  done)
+OUTPUT_ROOT="$RUN" SKIP_RUNS=1 bash scripts/arXiv_recreate.sh
+```
+
+| Asset                          | Size  | Scenario               |
+|--------------------------------|-------|------------------------|
+| `exam.tar.gz`                  | 152 M | `exam/`                |
+| `flights_chi_nyc.tar.gz`       |  84 M | `flights_chi_nyc/`     |
+| `flights_ithaca_reston.tar.gz` |  66 M | `flights_ithaca_reston/` |
+| `headphones.tar.gz`            | 347 M | `headphones/`          |
+
+## 6) Single run (for ad-hoc experimentation)
+
+If you want to inspect or modify a single configuration without launching
+the full sweep:
 
 ```bash
 python run_algorithm.py \
@@ -105,6 +224,7 @@ Common flags:
 | `--iterations`      | Total LLM calls                                                        |
 | `--batch-size`      | Batch size B (tournament/full_batch)                                   |
 | `--seed`            | Random seed                                                            |
+| `--section-order`   | Comma-separated section order (e.g. `persona,attributes,priorities`)   |
 | `--reasoning`       | Include explicit reasoning in prompts                                  |
 | `--use-history`     | Include prompt history across iterations                               |
 | `--temperature`     | Override LLM temperature for the active client                         |
@@ -112,108 +232,7 @@ Common flags:
 | `--unique-rank-batch` | Ensure each tournament batch contains at least one `human_sol` index |
 | `--comparison-prompt-{strategy,variant,seed}` | Override comparison prompt selection (tournament/full_batch) |
 | `--utility-prompt-{strategy,variant,seed}`    | Override utility prompt selection (utility) |
-| `--section-order`   | Comma-separated order for `persona`, `attributes`, `priorities` prompt sections |
 | `--dry-run`         | Print resolved config + would-be output path, then exit (no LLM calls) |
-
-Each run writes a single JSON to
-`outputs/<scenario>/<scenario>__<algo>__<mode>__api<...>__<...>.json`
-containing the winner, NAR, GTU, full iteration history, and a snapshot of
-the resolved config.
-
-## 5) Reproducing the paper
-
-Two top-level driver scripts reproduce the published results. Both are
-Linux/macOS only (they use bash-only features like `xargs -P` and `mktemp -t`);
-on Windows, run them under WSL or invoke `run_algorithm.py` directly per the
-§4 example.
-
-| Script                       | Reproduces                                   |
-|------------------------------|----------------------------------------------|
-| `scripts/IJCAI_recreate.sh`  | The runs and plots for the IJCAI submission. |
-| `scripts/arXiv_recreate.sh`  | The runs and plots for the arXiv version.    |
-
-Run either script from the repository root:
-
-```bash
-bash scripts/IJCAI_recreate.sh
-# or
-bash scripts/arXiv_recreate.sh
-```
-
-The prompt section-order sensitivity sweep is separate from the paper
-reproduction workflow:
-
-```bash
-bash scripts/order_sensitivity_recreate.sh
-```
-
-That script runs all six permutations of `persona`, `attributes`, and
-`priorities`, then writes plots such as
-`outputs/plots/groq__nar__scenario__by_algo_orders.png`.
-It defaults to Groq-only outputs for the open-source artifact set; set
-`API_MODELS=groq,gemini` once the Gemini sweep is complete.
-
-Optional env overrides accepted by both scripts:
-
-```bash
-TARGET_REPS=40 ITERS=25 BASE_SEED=1234 JOBS=4 \
-OUTPUT_ROOT=outputs/<existing-run>      # set to resume an in-progress run
-bash scripts/IJCAI_recreate.sh
-```
-
-| Variable       | Purpose                                                            |
-|----------------|--------------------------------------------------------------------|
-| `TARGET_REPS`  | Successful repetitions per cell of the experiment grid             |
-| `ITERS`        | LLM calls per run (`--iterations`)                                 |
-| `BASE_SEED`    | Seed for the first replicate; later replicates use `BASE_SEED + i` |
-| `JOBS`         | Parallelism for `xargs -P`                                         |
-| `OUTPUT_ROOT`  | Existing run directory to resume into (default: timestamped path)  |
-| `API_MODELS`   | Section-order sweep models; default `groq`                         |
-
-Output layout (timestamp/stamp matches the run):
-
-```
-outputs/paper__REPS40__iters25__seed1234__<stamp>/
-├── exam/                       all exam runs (every algo / mode / batch / prompt variant)
-├── flights_chi_nyc/            all flights_chi_nyc runs
-├── flights_ithaca_reston/      all flights_ithaca_reston runs
-├── headphones/                 all headphones runs
-└── plots/                      generated plots + CSV tables
-```
-
-Each script runs the experiment grid as a sequence of sections, each with a
-retry-until-target loop, and then generates the corresponding paper plots
-under `outputs/plots/`. Local run directories may still contain scratch
-`plots/` folders while experimenting, but the tracked open-source artifact
-bundle is the flat `outputs/plots/*.png` and `outputs/plots/*.csv` set.
-
-## 6) Plots
-
-All plot scripts can also be run standalone against any run directory:
-
-| Plot                                         | Script                                       | Reads from              |
-|----------------------------------------------|----------------------------------------------|-------------------------|
-| Headphones SOFT vs MAIN           | `plotting/headphones_plot.py`                | `--output-dir <RUN>`    |
-| Cross-scenario × algorithm (LISTEN-T, LISTEN-U, baseline, full-batch, human rerank) | `plotting/general_plot.py` with `--canonical_mode` | `--path <RUN>` |
-| Per-scenario batch-size sweep (B={2,4,8,16,32}) | `plotting/general_plot.py`                | `--path <RUN>`          |
-| Section-order sensitivity (persona/attributes/priorities) | `plotting/plot_orders_by_algo.py` (PNG + CSV) | `--data-dir <RUN>` |
-| Preference-utterance ablation (canonical vs BASE) | `plotting/plot_base_study.py` (PNG + CSV) | `--data-dir <RUN>`     |
-
-The cross-scenario plot overlays human-rerank baselines automatically by
-reading `input/rerank_*/`.
-
-To regenerate only the Groq section-order figure from an existing run:
-
-```bash
-python plotting/plot_orders_by_algo.py \
-  --data-dir outputs/<run-dir> \
-  --output-dir outputs/plots \
-  --api-model groq \
-  --batch-size 32
-```
-
-If the raw JSON runs are absent but the matching summary CSV already exists in
-`outputs/plots/`, the same command regenerates the PNG from that CSV.
 
 ## 7) Tests
 
