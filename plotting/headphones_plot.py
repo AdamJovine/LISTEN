@@ -11,6 +11,7 @@ Supports two modes:
 from __future__ import annotations
 
 import argparse
+import csv
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING
 from copy import copy
 from pathlib import Path
@@ -152,20 +153,10 @@ def headphones_plot(args: argparse.Namespace):
     utility_heights = [results[mode]["utility"][0] for mode in modes]
     utility_errs = [results[mode]["utility"][1] for mode in modes]
 
-    bars1 = plt.bar(x - width/2, tournament_heights, width, yerr=tournament_errs,
-                    capsize=4, color=LISTEN_T_COLOR, label="LISTEN-T")
-    bars2 = plt.bar(x + width/2, utility_heights, width, yerr=utility_errs,
-                    capsize=4, color=LISTEN_U_COLOR, label="LISTEN-U")
-
-    # Add sample sizes on bars
-    for i, (bar1, bar2) in enumerate(zip(bars1, bars2)):
-        mode = modes[i]
-        n1 = results[mode]["tournament"][2]
-        n2 = results[mode]["utility"][2]
-        plt.text(bar1.get_x() + bar1.get_width()/2, bar1.get_height() + tournament_errs[i] + 0.02,
-                f'n={n1}', ha='center', va='bottom', fontsize=8)
-        plt.text(bar2.get_x() + bar2.get_width()/2, bar2.get_height() + utility_errs[i] + 0.02,
-                f'n={n2}', ha='center', va='bottom', fontsize=8)
+    plt.bar(x - width/2, tournament_heights, width, yerr=tournament_errs,
+            capsize=4, color=LISTEN_T_COLOR, label="LISTEN-T")
+    plt.bar(x + width/2, utility_heights, width, yerr=utility_errs,
+            capsize=4, color=LISTEN_U_COLOR, label="LISTEN-U")
 
     mode_display = {
         "MAIN": "Headphones",
@@ -187,6 +178,16 @@ def headphones_plot(args: argparse.Namespace):
     out_path = build_output_path(args_no_algo, "norm-avg-rank-both")
     plt.tight_layout()
     plt.savefig(out_path, dpi=150)
+
+    csv_path = out_path.with_name(out_path.stem + "__n.csv")
+    with csv_path.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["mode", "algo", "n", "mean", "two_se"])
+        for mode in modes:
+            for algo_name in ("tournament", "utility"):
+                y, yerr, n = results[mode][algo_name]
+                writer.writerow([mode, algo_name, str(n), f"{y:.6f}", f"{yerr:.6f}"])
+    print(f"Saved sample sizes -> {csv_path}")
 
     if args.show:
         plt.show()
@@ -290,21 +291,19 @@ def layout_comparison_plot(args: argparse.Namespace):
     label_map = {"tournament": "LISTEN-T", "utility": "LISTEN-U"}
     legend_seen = set()
 
+    bar_stats: List[Tuple[str, str, str, int, float, float]] = []
     for (mode, algo, layout), x_pos in zip(bar_specs, positions):
         vals = data.get(layout, {}).get(mode, {}).get(algo, [])
         if vals:
             m, s = compute_mean_and_stderr(vals)
         else:
             m, s = 0.0, 0.0
-        n = len(vals)
         color = color_map[algo]
         label = label_map[algo] if algo not in legend_seen else None
         legend_seen.add(algo)
         ax.bar(x_pos, m, bar_width, yerr=s, capsize=4,
                alpha=0.7, color=color, label=label)
-        if n:
-            ax.text(x_pos, m + s + 0.01, f'n={n}',
-                    ha='center', va='bottom', fontsize=8)
+        bar_stats.append((mode, algo, layout, len(vals), m, s))
 
     # X tick per bar
     x_labels = [_clean_layout(l) for (_m, _a, l) in bar_specs]
@@ -336,6 +335,14 @@ def layout_comparison_plot(args: argparse.Namespace):
     filename = f"layout_comparison__{scenario}.png"
     out_path = plot_dir / filename
     fig.savefig(out_path, dpi=150)
+
+    csv_path = out_path.with_name(out_path.stem + "__n.csv")
+    with csv_path.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["mode", "algo", "layout", "n", "mean", "stderr"])
+        for mode, algo, layout, n, mean, stderr in bar_stats:
+            writer.writerow([mode, algo, layout, str(n), f"{mean:.6f}", f"{stderr:.6f}"])
+    print(f"Saved sample sizes -> {csv_path}")
 
     if args.show:
         plt.show()

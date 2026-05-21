@@ -251,11 +251,6 @@ def write_plot(
             markeredgewidth=1.0, markeredgecolor="white",
             label=label, linewidth=0, elinewidth=1.2, alpha=0.9, zorder=3,
         )
-        for xi, mi, ei, ci in zip(xs_i, means, errs, counts):
-            if ci:
-                ax.annotate(f"n={ci}", (xi, mi + ei),
-                            textcoords="offset points", xytext=(0, 6),
-                            ha="center", fontsize=8, color=color)
 
     x_labels = [display_names[col_id] for col_id in column_ids]
     ax.set_xticks(x)
@@ -289,7 +284,11 @@ def write_table(
     header = ["column", "scenario", "primary_mode"]
     for algo in ALGOS:
         disp = ALGO_DISPLAY[algo]
-        header += [f"{disp} primary NAR", f"{disp} BASE NAR", f"{disp} primary_better"]
+        header += [
+            f"{disp} primary NAR", f"{disp} primary n",
+            f"{disp} BASE NAR", f"{disp} BASE n",
+            f"{disp} primary_better",
+        ]
 
     with out_path.open("w", newline="") as f:
         writer = csv.writer(f)
@@ -297,13 +296,15 @@ def write_table(
         for col_id, scen, primary_mode, _base, display in COLUMNS:
             row: List[str] = [display, scen, primary_mode]
             for algo in ALGOS:
-                prim = _mean(nars.get((col_id, algo, "primary"), []))
-                base = _mean(nars.get((col_id, algo, "base"), []))
+                prim_vals = nars.get((col_id, algo, "primary"), [])
+                base_vals = nars.get((col_id, algo, "base"), [])
+                prim = _mean(prim_vals)
+                base = _mean(base_vals)
                 if prim is None or base is None:
                     better = ""
                 else:
                     better = "yes" if prim < base else "no"
-                row += [_fmt(prim), _fmt(base), better]
+                row += [_fmt(prim), str(len(prim_vals)), _fmt(base), str(len(base_vals)), better]
             writer.writerow(row)
     print(f"Saved table -> {out_path}")
 
@@ -329,18 +330,23 @@ def read_summary_table(path: Path) -> Dict[Tuple[str, str, str], List[float]]:
 
             for algo in ALGOS:
                 disp = ALGO_DISPLAY[algo]
-                for kind, column in (
-                    ("primary", f"{disp} primary NAR"),
-                    ("base", f"{disp} BASE NAR"),
+                for kind, nar_column, n_column in (
+                    ("primary", f"{disp} primary NAR", f"{disp} primary n"),
+                    ("base", f"{disp} BASE NAR", f"{disp} BASE n"),
                 ):
-                    raw = (row.get(column) or "").strip()
+                    raw = (row.get(nar_column) or "").strip()
                     if not raw:
                         continue
                     try:
                         mean = float(raw)
                     except ValueError:
                         continue
-                    data[(col_id, algo, kind)] = [mean] * 40
+                    n_raw = (row.get(n_column) or "").strip()
+                    try:
+                        n = int(n_raw) if n_raw else 40
+                    except ValueError:
+                        n = 40
+                    data[(col_id, algo, kind)] = [mean] * n
 
     return data
 

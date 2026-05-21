@@ -188,11 +188,6 @@ def write_plot(
             fmt=marker, color=color, markersize=8, capsize=4,
             label=label, linewidth=0, elinewidth=1.5,
         )
-        for xi, mi, ei, ci in zip(xs_i, means, errs, counts):
-            if ci:
-                ax.annotate(f"n={ci}", (xi, mi + ei),
-                            textcoords="offset points", xytext=(0, 5),
-                            ha="center", fontsize=6, color=color)
 
     x_labels = [get_scenario_display_name(sc) for sc in scenarios]
     ax.set_xticks(x)
@@ -212,13 +207,16 @@ def write_table(
 ) -> None:
     with out_path.open("w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["scenario", "mode"] + [label for label, *_ in TABLE_COLUMNS])
+        header: List[str] = ["scenario", "mode"]
+        for label, *_ in TABLE_COLUMNS:
+            header += [label, f"{label} n"]
+        writer.writerow(header)
         for scenario, mode in TABLE_ROWS:
             row: List[str] = [get_scenario_display_name(scenario), mode]
             for _label, layout, algo in TABLE_COLUMNS:
                 vals = layout_nars.get((layout, algo, scenario, mode), [])
                 cell = f"{(sum(vals) / len(vals)):.3f}" if vals else ""
-                row.append(cell)
+                row += [cell, str(len(vals))]
             writer.writerow(row)
     print(f"Saved table -> {out_path}")
 

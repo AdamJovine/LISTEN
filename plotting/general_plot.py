@@ -22,6 +22,7 @@ Examples:
 from __future__ import annotations
 
 import argparse
+import csv
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -106,6 +107,33 @@ def get_unique_field_values(algos: List[Tuple[Path, Any]], field: str) -> List[A
 # Plotting
 # =============================================================================
 
+def _write_n_sidecar(agg_data: Dict[str, Any], plot_path: Path) -> None:
+    csv_path = plot_path.with_name(plot_path.stem + "__n.csv")
+    x_field = agg_data["x_field"]
+    group_field = agg_data["group_field"]
+    x_values = agg_data["x_values"]
+    groups = agg_data["groups"]
+    with csv_path.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([group_field or "group", x_field, "n", "mean", "stderr"])
+        for group_val, group_data in groups.items():
+            counts = group_data.get("counts", [])
+            means = group_data.get("means", [])
+            errs = group_data.get("stderrs", [])
+            for i, xv in enumerate(x_values):
+                n = counts[i] if i < len(counts) else 0
+                m = means[i] if i < len(means) else None
+                e = errs[i] if i < len(errs) else None
+                writer.writerow([
+                    str(group_val),
+                    str(xv),
+                    str(n),
+                    "" if m is None else f"{m:.6f}",
+                    "" if e is None else f"{e:.6f}",
+                ])
+    print(f"Saved sample sizes -> {csv_path}")
+
+
 def plot_aggregated(
     agg_data: Dict[str, Any],
     title: str,
@@ -133,19 +161,14 @@ def plot_aggregated(
     if n_groups == 1 and "_all" in groups:
         # Simple dot plot (no legend grouping)
         group_data = groups["_all"]
-        counts = group_data.get("counts", [])
         valid = [(i, group_data["means"][i], group_data["stderrs"][i])
                  for i in range(len(x_labels)) if group_data["means"][i] is not None]
         if valid:
             indices, means, errs = zip(*valid)
             ax.errorbar(indices, means, yerr=errs, fmt='D', markersize=4, capsize=5,
                        color="steelblue", markeredgecolor="black", markeredgewidth=0.5)
-        labeled = [
-            f"{lbl}\n(n={counts[i]})" if i < len(counts) and counts[i] else lbl
-            for i, lbl in enumerate(x_labels)
-        ]
         ax.set_xticks(range(len(x_labels)))
-        ax.set_xticklabels(labeled)
+        ax.set_xticklabels(x_labels)
     else:
         # Grouped dot plot with legend
         offset_step = 0.12
@@ -155,7 +178,6 @@ def plot_aggregated(
         for i, (group_val, group_data) in enumerate(groups.items()):
             means = group_data["means"]
             errs = group_data["stderrs"]
-            counts = group_data.get("counts", [])
             offset = (i - n_groups / 2 + 0.5) * offset_step
             positions = [xc + offset for xc in x_centers]
 
@@ -163,13 +185,11 @@ def plot_aggregated(
             valid_positions = []
             valid_means = []
             valid_errs = []
-            valid_counts = []
-            for j, (pos, m, e) in enumerate(zip(positions, means, errs)):
+            for pos, m, e in zip(positions, means, errs):
                 if m is not None:
                     valid_positions.append(pos)
                     valid_means.append(m)
                     valid_errs.append(e if e is not None else 0)
-                    valid_counts.append(counts[j] if j < len(counts) else 0)
 
             # Get display name, color, and marker for algorithm
             display_name = get_algo_display_name(str(group_val)) if group_field == "algo" else str(group_val)
@@ -182,12 +202,6 @@ def plot_aggregated(
             ax.errorbar(valid_positions, valid_means, yerr=valid_errs, fmt=marker, markersize=6,
                        capsize=4, label=label, markeredgecolor="black", markeredgewidth=0.5,
                        color=color)
-
-            # Annotate each point with its sample size
-            for pos, m, e, c in zip(valid_positions, valid_means, valid_errs, valid_counts):
-                if c:
-                    ax.annotate(f"n={c}", (pos, m), textcoords="offset points",
-                               xytext=(0, 8), ha="center", fontsize=6, color=color or "black")
         ax.set_xticks(x_centers)
         ax.set_xticklabels(x_labels)
         ax.legend(fontsize=14, title=get_field_display_name(group_field) if group_field else None, title_fontsize=14)
@@ -199,6 +213,7 @@ def plot_aggregated(
 
     plt.savefig(output_path, dpi=150)
     print(f"Saved: {output_path}")
+    _write_n_sidecar(agg_data, output_path)
 
     if show:
         plt.show()
