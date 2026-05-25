@@ -252,19 +252,24 @@ class UtilityPromptTemplate(PromptVariantMixin, PromptTemplateInterface):
         return prompt
 
     def _resolve_scenario_block(self) -> str:
+        # iter-0 scenario block is persona + attributes only; the priorities
+        # text (policy_guidance) is injected by utility_refinement at iter >=1,
+        # matching pre-section_order behavior. Persona and attributes are
+        # joined with a single newline so the blank line sits after the block
+        # (from the template's "{scenario_header}\n\n..."), matching the
+        # original scenario_header layout byte-for-byte.
         if not self.section_order:
             return self.scenario_header
         sections = {
             "persona": self.persona_context,
             "attributes": self.attribute_definitions,
-            "priorities": self.policy_guidance,
         }
         parts = [
-            (sections.get(name) or "").strip()
+            (sections.get(name) or "").rstrip("\n")
             for name in self.section_order
             if (sections.get(name) or "").strip()
         ]
-        return "\n\n".join(parts)
+        return "\n".join(parts) + "\n"
 
     def get_base_prompt_variant_name(self) -> str:
         return self.get_variant_name()
