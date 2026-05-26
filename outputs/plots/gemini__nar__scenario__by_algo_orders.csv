@@ -5,12 +5,12 @@ Flights Ithaca->Reston,tournament,"attributes,persona,priorities",40,0.0186,0.00
 Flights Ithaca->Reston,tournament,"attributes,priorities,persona",40,0.0162,0.0047
 Flights Ithaca->Reston,tournament,"priorities,persona,attributes",40,0.0075,0.0027
 Flights Ithaca->Reston,tournament,"priorities,attributes,persona",40,0.0404,0.0362
-Flights Ithaca->Reston,utility,"persona,attributes,priorities",40,0.0356,0.0019
-Flights Ithaca->Reston,utility,"persona,priorities,attributes",40,0.0380,0.0013
-Flights Ithaca->Reston,utility,"attributes,persona,priorities",40,0.0384,0.0016
-Flights Ithaca->Reston,utility,"attributes,priorities,persona",40,0.0489,0.0248
-Flights Ithaca->Reston,utility,"priorities,persona,attributes",40,0.0498,0.0246
-Flights Ithaca->Reston,utility,"priorities,attributes,persona",40,0.0498,0.0246
+Flights Ithaca->Reston,utility,"persona,attributes,priorities",40,0.0345,0.0033
+Flights Ithaca->Reston,utility,"persona,priorities,attributes",40,0.0431,0.0252
+Flights Ithaca->Reston,utility,"attributes,persona,priorities",40,0.0347,0.0029
+Flights Ithaca->Reston,utility,"attributes,priorities,persona",40,0.0323,0.0036
+Flights Ithaca->Reston,utility,"priorities,persona,attributes",40,0.0333,0.0034
+Flights Ithaca->Reston,utility,"priorities,attributes,persona",40,0.0344,0.0029
 Flights Ithaca->Reston,full_batch,"persona,attributes,priorities",40,0.1267,0.0647
 Flights Ithaca->Reston,baseline_random,,40,0.5301,0.0000
 Flights Ithaca->Reston,baseline_zscore,,1,0.0370,0.0000
@@ -53,12 +53,12 @@ Headphones-SOFT,tournament,"attributes,persona,priorities",40,0.1867,0.0550
 Headphones-SOFT,tournament,"attributes,priorities,persona",40,0.1515,0.0380
 Headphones-SOFT,tournament,"priorities,persona,attributes",40,0.2404,0.0620
 Headphones-SOFT,tournament,"priorities,attributes,persona",40,0.2806,0.0682
-Headphones-SOFT,utility,"persona,attributes,priorities",40,0.2063,0.0822
-Headphones-SOFT,utility,"persona,priorities,attributes",40,0.0629,0.0288
-Headphones-SOFT,utility,"attributes,persona,priorities",40,0.0660,0.0288
-Headphones-SOFT,utility,"attributes,priorities,persona",40,0.1038,0.0554
-Headphones-SOFT,utility,"priorities,persona,attributes",40,0.1190,0.0610
-Headphones-SOFT,utility,"priorities,attributes,persona",40,0.0644,0.0288
+Headphones-SOFT,utility,"persona,attributes,priorities",40,0.1479,0.0701
+Headphones-SOFT,utility,"persona,priorities,attributes",40,0.1054,0.0553
+Headphones-SOFT,utility,"attributes,persona,priorities",40,0.0613,0.0288
+Headphones-SOFT,utility,"attributes,priorities,persona",40,0.1054,0.0553
+Headphones-SOFT,utility,"priorities,persona,attributes",40,0.1335,0.0659
+Headphones-SOFT,utility,"priorities,attributes,persona",40,0.1206,0.0609
 Headphones-SOFT,full_batch,"persona,attributes,priorities",40,0.2373,0.0647
 Headphones-SOFT,baseline_random,,40,0.4446,0.0786
 Headphones-SOFT,baseline_zscore,,1,0.0769,0.0000
@@ -68,12 +68,12 @@ Exam Scheduling,tournament,"attributes,persona,priorities",40,0.4887,0.0250
 Exam Scheduling,tournament,"attributes,priorities,persona",40,0.4637,0.0422
 Exam Scheduling,tournament,"priorities,persona,attributes",40,0.4762,0.0349
 Exam Scheduling,tournament,"priorities,attributes,persona",40,0.4887,0.0251
-Exam Scheduling,utility,"persona,attributes,priorities",40,0.4887,0.0250
-Exam Scheduling,utility,"persona,priorities,attributes",40,0.4637,0.0422
+Exam Scheduling,utility,"persona,attributes,priorities",40,0.4513,0.0480
+Exam Scheduling,utility,"persona,priorities,attributes",40,0.4638,0.0421
 Exam Scheduling,utility,"attributes,persona,priorities",40,0.4513,0.0480
-Exam Scheduling,utility,"attributes,priorities,persona",40,0.4887,0.0250
-Exam Scheduling,utility,"priorities,persona,attributes",40,0.4262,0.0572
-Exam Scheduling,utility,"priorities,attributes,persona",40,0.4887,0.0250
+Exam Scheduling,utility,"attributes,priorities,persona",40,0.4388,0.0529
+Exam Scheduling,utility,"priorities,persona,attributes",40,0.4388,0.0529
+Exam Scheduling,utility,"priorities,attributes,persona",40,0.4513,0.0480
 Exam Scheduling,full_batch,"persona,attributes,priorities",40,0.5012,0.0000
 Exam Scheduling,baseline_random,,40,0.5012,0.0000
 Exam Scheduling,baseline_zscore,,1,0.5012,0.0000
