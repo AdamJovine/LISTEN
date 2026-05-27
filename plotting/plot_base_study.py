@@ -257,18 +257,23 @@ def write_plot(
 
     x_labels = [display_names[col_id] for col_id in column_ids]
     ax.set_xticks(x)
-    ax.set_xticklabels(x_labels, rotation=20, ha="right")
-    ax.tick_params(axis="x", labelsize=14.4)
-    ax.tick_params(axis="y", labelsize=15.4)
-    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=18.2)
+    ax.set_xticklabels(x_labels, ha="center")
+    ax.tick_params(axis="x", labelsize=14)
+    ax.tick_params(axis="y", labelsize=14)
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     ax.set_ylim(-0.12, 0.78)
     ax.set_yticks(np.arange(-0.1, 0.71, 0.1))
     ax.set_xlim(-0.5, n_columns - 0.5)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    ax.legend(fontsize=18.2, loc="upper left", bbox_to_anchor=(0.005, 0.995),
-              frameon=True, framealpha=0.85, borderpad=0.4,
-              labelspacing=0.35, handletextpad=0.55, title=None)
-    fig.tight_layout()
+    # Horizontal legend above the axis so it never blocks data points.
+    n_series = len(ax.get_legend_handles_labels()[0])
+    legend_ncol = min(n_series, 3) if n_series > 0 else 1
+    ax.legend(fontsize=14, loc="lower center", bbox_to_anchor=(0.5, 1.01),
+              ncol=legend_ncol, frameon=False,
+              handletextpad=0.35, columnspacing=1.0)
+    # Reserve top of the figure for the legend (1 row if <=3 series, 2 rows otherwise).
+    top_rect = 0.92 if n_series <= 3 else 0.88
+    fig.tight_layout(rect=(0, 0, 1.0, top_rect))
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
     print(f"\nSaved plot -> {out_path}")
