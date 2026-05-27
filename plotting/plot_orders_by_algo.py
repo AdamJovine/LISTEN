@@ -79,10 +79,13 @@ ALGO_MARKER = {
 BASELINE_ALGOS = {"full_batch", "baseline_random", "baseline_zscore", "human_rerank"}
 
 
-def errorbar_style(algo: str) -> Dict[str, Any]:
+def errorbar_style(algo: str, markersize: int = 11) -> Dict[str, Any]:
+    """Errorbar style. Default markersize=11 suits the aggregated plot
+    (one marker per algo per scenario). For the by-section-order variant
+    (6 jittered markers per algo) pass markersize=7 to avoid overlap."""
     zorder = 5 if algo in BASELINE_ALGOS else 3
     return {
-        "markersize": 11,
+        "markersize": markersize,
         "capsize": 2.5,
         "elinewidth": 1.0,
         "markeredgewidth": 0.8,
@@ -482,7 +485,7 @@ def plot_one_api(
                     [x_algo[si]], [mu], yerr=[err],
                     fmt=marker, color=color, linewidth=0,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
-                    **errorbar_style(algo),
+                    **errorbar_style(algo, markersize=7),
                 )
                 legend_handles.setdefault(algo, True)
                 continue
@@ -502,7 +505,7 @@ def plot_one_api(
                     [xi], [mu], yerr=[err],
                     fmt=marker, color=color, linewidth=0,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
-                    **errorbar_style(algo),
+                    **errorbar_style(algo, markersize=7),
                 )
                 idx = SECTION_ORDER_INDEX.get(so) if so is not None else None
                 if idx is not None:
