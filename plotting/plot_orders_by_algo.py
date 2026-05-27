@@ -19,6 +19,9 @@ from typing import Any, Dict, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+plt.rcParams["font.size"] *= 1.4
+plt.rcParams["xtick.labelsize"] = 12  # x-tick labels: 1.2× matplotlib default of 10
+
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,10 +43,12 @@ COLUMNS: List[Tuple[str, str, str, str]] = [
     ("exam",                  "exam",                  "REGISTRAR",              "Exam Scheduling"),
 ]
 
-# Canonical section-order numbering used by scripts/order_sensitivity_recreate.sh.
+# Canonical section-order numbering. The default order (persona, priorities,
+# attributes) is index 1; remaining permutations fill 2..6 in their original
+# relative order.
 SECTION_ORDER_INDEX: Dict[Tuple[str, ...], int] = {
-    ("persona", "attributes", "priorities"): 1,
-    ("persona", "priorities", "attributes"): 2,
+    ("persona", "priorities", "attributes"): 1,
+    ("persona", "attributes", "priorities"): 2,
     ("attributes", "persona", "priorities"): 3,
     ("attributes", "priorities", "persona"): 4,
     ("priorities", "persona", "attributes"): 5,
@@ -136,7 +141,7 @@ def annotate_section_order(ax: Any, x: float, y: float, err: float, idx: int, co
         xytext=(0, offset_y),
         ha="center",
         va=va,
-        fontsize=9.5,
+        fontsize=13.3,
         fontweight="bold",
         color=color,
     )
@@ -224,9 +229,11 @@ def collect_by_order(
         cfg = meta.get("config") or {}
         so = cfg.get("section_order")
         so_key: Tuple[str, ...] | None = tuple(so) if isinstance(so, list) else None
-        # Order filter applies only to prompt-aware algos. Baseline + rerank
-        # have no section_order and pass through unconditionally.
-        if so_filter_norm is not None and algo_name in ("tournament", "utility", "full_batch"):
+        # Order filter applies only to LISTEN-T and LISTEN-U. Baseline +
+        # rerank pass through unconditionally because they have no
+        # section_order. full_batch uses a single prompt layout, so its
+        # data is included regardless of the active filter.
+        if so_filter_norm is not None and algo_name in ("tournament", "utility"):
             if so_key is None or tuple(s.lower() for s in so_key) != so_filter_norm:
                 continue
         for col_id, c_scen, primary_mode, _disp in COLUMNS:
@@ -416,9 +423,12 @@ def plot_one_api_summary(
               ncol=legend_ncol, frameon=False,
               handletextpad=0.35, columnspacing=1.0)
 
-    needs_key = any(
-        so is not None and SECTION_ORDER_INDEX.get(so) is not None
-        for (_c, _a, so) in summary
+    present_orders = sorted(
+        {
+            so for (_c, _a, so) in summary
+            if so is not None and SECTION_ORDER_INDEX.get(so) is not None
+        },
+        key=lambda t: SECTION_ORDER_INDEX[t],
     )
     if needs_key:
         ordered = sorted(SECTION_ORDER_INDEX.items(), key=lambda kv: kv[1])
@@ -526,10 +536,14 @@ def plot_one_api(
               ncol=legend_ncol, frameon=False,
               handletextpad=0.35, columnspacing=1.0)
 
-    needs_key = any(
-        so is not None and SECTION_ORDER_INDEX.get(so) is not None
-        for (_c, _a, so) in data
-        if data[(_c, _a, so)]
+    present_orders = sorted(
+        {
+            so for (_c, _a, so) in data
+            if data[(_c, _a, so)]
+            and so is not None
+            and SECTION_ORDER_INDEX.get(so) is not None
+        },
+        key=lambda t: SECTION_ORDER_INDEX[t],
     )
     if needs_key:
         ordered = sorted(SECTION_ORDER_INDEX.items(), key=lambda kv: kv[1])

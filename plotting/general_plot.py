@@ -29,6 +29,9 @@ from typing import Any, Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 
+plt.rcParams["font.size"] *= 1.4
+plt.rcParams["xtick.labelsize"] = 12  # x-tick labels: 1.2× matplotlib default of 10
+
 # Ensure project root is on sys.path
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:

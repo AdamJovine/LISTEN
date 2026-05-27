@@ -19,6 +19,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+plt.rcParams["font.size"] *= 1.4
+plt.rcParams["xtick.labelsize"] = 12  # x-tick labels: 1.2× matplotlib default of 10
+
 from plotting_helpers import (
     aggregate_algo_series,
     build_output_path,
@@ -169,7 +172,7 @@ def headphones_plot(args: argparse.Namespace):
     plt.ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     plt.ylim(0, max(tournament_heights + utility_heights) * 1.25)
     plt.grid(True, axis="y", alpha=0.3)
-    plt.legend(fontsize=14)
+    plt.legend(fontsize=19.6)
 
     # Use args without algo/mode filter for output path; batch_size=32 always (LISTEN-T filter)
     args_no_algo = copy(args)
@@ -311,7 +314,7 @@ def layout_comparison_plot(args: argparse.Namespace):
     # X tick per bar
     x_labels = [_clean_layout(l) for (_m, _a, l) in bar_specs]
     ax.set_xticks(positions)
-    ax.set_xticklabels(x_labels, fontsize=7, rotation=20, ha='right')
+    ax.set_xticklabels(x_labels, fontsize=8.4, rotation=20, ha='right')
 
     # Cluster annotations below the bar labels (mode + algo)
     mode_display = {"SOFT": "Headphones-Soft", "MAIN": "Headphones"}
@@ -323,11 +326,11 @@ def layout_comparison_plot(args: argparse.Namespace):
         ax.annotate(f"{label_map[algo]}\n{mode_display.get(mode, mode)}",
                     xy=(center, 0), xytext=(0, -42),
                     textcoords="offset points",
-                    ha='center', va='top', fontsize=9, fontweight='bold',
+                    ha='center', va='top', fontsize=12.6, fontweight='bold',
                     annotation_clip=False)
     ax.set_ylabel("Normalized Average Rank (mean +/- 2SE)")
     ax.grid(True, axis="y", alpha=0.3)
-    ax.legend(fontsize=14)
+    ax.legend(fontsize=19.6)
     ax.set_ylim(bottom=0)
     fig.tight_layout()
 

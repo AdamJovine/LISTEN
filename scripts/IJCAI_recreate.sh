@@ -47,7 +47,7 @@ DEFAULT_PROMPT="header_then_task_v1"
 MAIN_BATCH_SIZE="${MAIN_BATCH_SIZE:-32}"
 HEADPHONES_BATCH_SIZE="${HEADPHONES_BATCH_SIZE:-32}"
 SWEEP_BATCH_SIZES=(2 4 8 16 32)
-DEFAULT_ORDER="${DEFAULT_ORDER:-persona,attributes,priorities}"
+DEFAULT_ORDER="${DEFAULT_ORDER:-attributes,priorities,persona}"
 
 API_MODELS=("groq" "gemini")
 
