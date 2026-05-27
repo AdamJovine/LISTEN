@@ -430,8 +430,8 @@ def plot_one_api_summary(
         },
         key=lambda t: SECTION_ORDER_INDEX[t],
     )
-    if needs_key:
-        ordered = sorted(SECTION_ORDER_INDEX.items(), key=lambda kv: kv[1])
+    if present_orders:
+        ordered = [(so, SECTION_ORDER_INDEX[so]) for so in present_orders]
         half = (len(ordered) + 1) // 2
         line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[:half])
         line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
@@ -550,8 +550,8 @@ def plot_one_api(
         },
         key=lambda t: SECTION_ORDER_INDEX[t],
     )
-    if needs_key:
-        ordered = sorted(SECTION_ORDER_INDEX.items(), key=lambda kv: kv[1])
+    if present_orders:
+        ordered = [(so, SECTION_ORDER_INDEX[so]) for so in present_orders]
         half = (len(ordered) + 1) // 2
         line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[:half])
         line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
