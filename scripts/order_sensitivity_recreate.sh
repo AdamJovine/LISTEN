@@ -70,7 +70,7 @@ SECTION_ORDERS=(
   "priorities,attributes,persona"
 )
 
-DEFAULT_ORDER="persona,attributes,priorities"
+DEFAULT_ORDER="attributes,priorities,persona"
 
 GROUP_STAMP="$(date -u +"%Y%m%d_%H%M%S")"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/outputs/order_sensitivity__REPS${TARGET_REPS}__iters${ITERS}__seed${BASE_SEED}__${GROUP_STAMP}}"

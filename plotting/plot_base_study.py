@@ -27,6 +27,9 @@ from typing import Dict, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+plt.rcParams["font.size"] *= 1.4
+plt.rcParams["xtick.labelsize"] = 12  # x-tick labels: 1.2× matplotlib default of 10
+
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -254,15 +257,15 @@ def write_plot(
 
     x_labels = [display_names[col_id] for col_id in column_ids]
     ax.set_xticks(x)
-    ax.set_xticklabels(x_labels)
-    ax.tick_params(axis="x", labelsize=12)
-    ax.tick_params(axis="y", labelsize=11)
-    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=13)
+    ax.set_xticklabels(x_labels, rotation=20, ha="right")
+    ax.tick_params(axis="x", labelsize=14.4)
+    ax.tick_params(axis="y", labelsize=15.4)
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=18.2)
     ax.set_ylim(-0.12, 0.78)
     ax.set_yticks(np.arange(-0.1, 0.71, 0.1))
     ax.set_xlim(-0.5, n_columns - 0.5)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    ax.legend(fontsize=13, loc="upper left", bbox_to_anchor=(0.005, 0.995),
+    ax.legend(fontsize=18.2, loc="upper left", bbox_to_anchor=(0.005, 0.995),
               frameon=True, framealpha=0.85, borderpad=0.4,
               labelspacing=0.35, handletextpad=0.55, title=None)
     fig.tight_layout()

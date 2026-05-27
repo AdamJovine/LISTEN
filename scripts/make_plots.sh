@@ -36,7 +36,7 @@ PLOT_DIR="${PLOT_DIR:-${REPO_ROOT}/outputs/plots}"
 mkdir -p "${PLOT_DIR}"
 
 MAIN_BATCH_SIZE="${MAIN_BATCH_SIZE:-32}"
-DEFAULT_ORDER="${DEFAULT_ORDER:-persona,attributes,priorities}"
+DEFAULT_ORDER="${DEFAULT_ORDER:-persona,priorities,attributes}"
 API_MODEL="${API_MODEL:-groq}"
 
 api_args=()

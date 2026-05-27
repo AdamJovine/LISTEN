@@ -28,6 +28,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+plt.rcParams["font.size"] *= 1.4
+plt.rcParams["xtick.labelsize"] = 12  # x-tick labels: 1.2× matplotlib default of 10
+
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -193,7 +196,7 @@ def write_plot(
     ax.set_xticks(x)
     ax.set_xticklabels(x_labels)
     ax.set_ylabel("NAR (mean +/- 2 SE)")
-    ax.legend(fontsize=14, loc="upper left")
+    ax.legend(fontsize=19.6, loc="upper left")
     ax.set_ylim(bottom=0)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)

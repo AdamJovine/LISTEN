@@ -29,6 +29,9 @@ from typing import Any, Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 
+plt.rcParams["font.size"] *= 1.4
+plt.rcParams["xtick.labelsize"] = 12  # x-tick labels: 1.2× matplotlib default of 10
+
 # Ensure project root is on sys.path
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
@@ -204,7 +207,7 @@ def plot_aggregated(
                        color=color)
         ax.set_xticks(x_centers)
         ax.set_xticklabels(x_labels)
-        ax.legend(fontsize=14, title=get_field_display_name(group_field) if group_field else None, title_fontsize=14)
+        ax.legend(fontsize=19.6, title=get_field_display_name(group_field) if group_field else None, title_fontsize=19.6)
 
     ax.grid(True, axis='y', linestyle=':', linewidth=0.5, color='gray', alpha=0.5)
     ax.set_xlabel(get_field_display_name(x_field))

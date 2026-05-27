@@ -19,6 +19,9 @@ from typing import Any, Dict, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+plt.rcParams["font.size"] *= 1.4
+plt.rcParams["xtick.labelsize"] = 12  # x-tick labels: 1.2× matplotlib default of 10
+
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,10 +43,12 @@ COLUMNS: List[Tuple[str, str, str, str]] = [
     ("exam",                  "exam",                  "REGISTRAR",              "Exam Scheduling"),
 ]
 
-# Canonical section-order numbering used by scripts/order_sensitivity_recreate.sh.
+# Canonical section-order numbering. The default order (persona, priorities,
+# attributes) is index 1; remaining permutations fill 2..6 in their original
+# relative order.
 SECTION_ORDER_INDEX: Dict[Tuple[str, ...], int] = {
-    ("persona", "attributes", "priorities"): 1,
-    ("persona", "priorities", "attributes"): 2,
+    ("persona", "priorities", "attributes"): 1,
+    ("persona", "attributes", "priorities"): 2,
     ("attributes", "persona", "priorities"): 3,
     ("attributes", "priorities", "persona"): 4,
     ("priorities", "persona", "attributes"): 5,
@@ -133,7 +138,7 @@ def annotate_section_order(ax: Any, x: float, y: float, err: float, idx: int, co
         xytext=(0, offset_y),
         ha="center",
         va=va,
-        fontsize=9.5,
+        fontsize=13.3,
         fontweight="bold",
         color=color,
     )
@@ -401,26 +406,30 @@ def plot_one_api_summary(
 
     ax.set_xticks(x_centers)
     ax.set_xticklabels([column_labels[c] for c in column_ids])
-    ax.tick_params(axis="x", labelsize=12)
-    ax.tick_params(axis="y", labelsize=11)
-    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=13)
+    ax.tick_params(axis="x", labelsize=14.4)
+    ax.tick_params(axis="y", labelsize=15.4)
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=18.2)
     style_paper_axes(ax, n_col)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    ax.legend(fontsize=10, loc="upper left", bbox_to_anchor=(0.005, 0.995),
+    ax.legend(fontsize=14, loc="upper left", bbox_to_anchor=(0.005, 0.995),
               frameon=True, framealpha=0.85, borderpad=0.35,
               labelspacing=0.3, handletextpad=0.45, title=None)
 
-    needs_key = any(
-        so is not None and SECTION_ORDER_INDEX.get(so) is not None
-        for (_c, _a, so) in summary
+    present_orders = sorted(
+        {
+            so for (_c, _a, so) in summary
+            if so is not None and SECTION_ORDER_INDEX.get(so) is not None
+        },
+        key=lambda t: SECTION_ORDER_INDEX[t],
     )
-    if needs_key:
-        ordered = sorted(SECTION_ORDER_INDEX.items(), key=lambda kv: kv[1])
-        half = (len(ordered) + 1) // 2
-        line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[:half])
-        line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
-        fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=10.5, color="#444")
-        fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=10.5, color="#444")
+    if present_orders:
+        items = [(o, SECTION_ORDER_INDEX[o]) for o in present_orders]
+        half = (len(items) + 1) // 2
+        line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in items[:half])
+        line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in items[half:])
+        fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=14.7, color="#444")
+        if line2:
+            fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=14.7, color="#444")
         fig.tight_layout(rect=(0, 0, 1.0, 0.93))
     else:
         fig.tight_layout()
@@ -506,27 +515,32 @@ def plot_one_api(
 
     ax.set_xticks(x_centers)
     ax.set_xticklabels([column_labels[c] for c in column_ids])
-    ax.tick_params(axis="x", labelsize=12)
-    ax.tick_params(axis="y", labelsize=11)
-    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=13)
+    ax.tick_params(axis="x", labelsize=14.4)
+    ax.tick_params(axis="y", labelsize=15.4)
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=18.2)
     style_paper_axes(ax, n_col)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    ax.legend(fontsize=10, loc="upper left", bbox_to_anchor=(0.005, 0.995),
+    ax.legend(fontsize=14, loc="upper left", bbox_to_anchor=(0.005, 0.995),
               frameon=True, framealpha=0.85, borderpad=0.35,
               labelspacing=0.3, handletextpad=0.45, title=None)
 
-    needs_key = any(
-        so is not None and SECTION_ORDER_INDEX.get(so) is not None
-        for (_c, _a, so) in data
-        if data[(_c, _a, so)]
+    present_orders = sorted(
+        {
+            so for (_c, _a, so) in data
+            if data[(_c, _a, so)]
+            and so is not None
+            and SECTION_ORDER_INDEX.get(so) is not None
+        },
+        key=lambda t: SECTION_ORDER_INDEX[t],
     )
-    if needs_key:
-        ordered = sorted(SECTION_ORDER_INDEX.items(), key=lambda kv: kv[1])
-        half = (len(ordered) + 1) // 2
-        line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[:half])
-        line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
-        fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=10.5, color="#444")
-        fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=10.5, color="#444")
+    if present_orders:
+        items = [(o, SECTION_ORDER_INDEX[o]) for o in present_orders]
+        half = (len(items) + 1) // 2
+        line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in items[:half])
+        line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in items[half:])
+        fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=14.7, color="#444")
+        if line2:
+            fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=14.7, color="#444")
         fig.tight_layout(rect=(0, 0, 1.0, 0.93))
     else:
         fig.tight_layout()
