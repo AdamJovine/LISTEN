@@ -457,9 +457,14 @@ def plot_one_api(
     column_ids = [c for c, _s, _m, _d in COLUMNS]
     column_labels = {c: d for c, _s, _m, d in COLUMNS}
 
+    # full_batch belongs on the aggregated by-algo plot (one marker per algo),
+    # but on the per-section-order plot it has no orders and would render as a
+    # lone dot — confusing alongside 6-variant clusters. Drop it here.
+    algos_for_orders = [a for a in ALGO_COLUMNS if a != "full_batch"]
+
     # Which algo columns actually have any data? Drop empty ones.
     used_algos: List[str] = []
-    for a in ALGO_COLUMNS:
+    for a in algos_for_orders:
         if a == "human_rerank":
             if any(rerank.get(c) for c in column_ids):
                 used_algos.append(a)
