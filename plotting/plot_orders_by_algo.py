@@ -226,9 +226,11 @@ def collect_by_order(
         cfg = meta.get("config") or {}
         so = cfg.get("section_order")
         so_key: Tuple[str, ...] | None = tuple(so) if isinstance(so, list) else None
-        # Order filter applies only to prompt-aware algos. Baseline + rerank
-        # have no section_order and pass through unconditionally.
-        if so_filter_norm is not None and algo_name in ("tournament", "utility", "full_batch"):
+        # Order filter applies only to LISTEN-T and LISTEN-U. Baseline +
+        # rerank pass through unconditionally because they have no
+        # section_order. full_batch uses a single prompt layout, so its
+        # data is included regardless of the active filter.
+        if so_filter_norm is not None and algo_name in ("tournament", "utility"):
             if so_key is None or tuple(s.lower() for s in so_key) != so_filter_norm:
                 continue
         for col_id, c_scen, primary_mode, _disp in COLUMNS:

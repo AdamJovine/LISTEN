@@ -134,10 +134,10 @@ def headphones_plot(args: argparse.Namespace):
             args_copy = copy(args)
             args_copy.mode = mode
             args_copy.algo = algo_name
-            # LISTEN-T: filter to batch size 8; LISTEN-U: no batch size filter
+            # LISTEN-T: filter to batch size 32 by default; LISTEN-U: no batch size filter
             if algo_name == "tournament":
                 if not args_copy.batch_size:
-                    args_copy.batch_size = 8
+                    args_copy.batch_size = 32
             else:
                 args_copy.batch_size = None
             args_copy.reps_cap = reps_cap
@@ -171,11 +171,12 @@ def headphones_plot(args: argparse.Namespace):
     plt.grid(True, axis="y", alpha=0.3)
     plt.legend(fontsize=19.6)
 
-    # Use args without algo/mode filter for output path; batch_size=8 always (LISTEN-T filter)
+    # Use args without algo/mode filter for output path; LISTEN-T batch_size
+    # falls back to 32 when the caller didn't pass one.
     args_no_algo = copy(args)
     args_no_algo.algo = None
     args_no_algo.mode = None if len(modes) > 1 else modes[0]
-    args_no_algo.batch_size = 8
+    args_no_algo.batch_size = args.batch_size or 32
     if getattr(args, "plot_dir", None):
         args_no_algo.output_dir = args.plot_dir
     out_path = build_output_path(args_no_algo, "norm-avg-rank-both")
