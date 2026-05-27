@@ -56,11 +56,15 @@ echo "[PLOT_DIR]    ${PLOT_DIR}"
 echo
 
 echo "=== [PLOT 1] Per-scenario by batch size (tournament) ==="
+# --canonical_mode restricts each scenario to its canonical (with-preference)
+# mode; without it, Section 1 leaks B=32 BASE/SOFT data and produces one-point
+# "sweeps" for those modes.
 "${PYTHON_BIN}" "${REPO_ROOT}/plotting/general_plot.py" \
   --path "${OUTPUT_ROOT}" \
   --output-dir "${PLOT_DIR}" \
-  --x_large algo tournament scenario all mode all api_model "${general_api_value}" \
+  --x_large algo tournament scenario all api_model "${general_api_value}" \
   --x_medium batch_size all \
+  --canonical_mode \
   --y nar \
   || echo "[WARN] PLOT 1 failed"
 

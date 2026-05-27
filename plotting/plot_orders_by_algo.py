@@ -82,7 +82,7 @@ BASELINE_ALGOS = {"full_batch", "baseline_random", "baseline_zscore", "human_rer
 def errorbar_style(algo: str) -> Dict[str, Any]:
     zorder = 5 if algo in BASELINE_ALGOS else 3
     return {
-        "markersize": 7,
+        "markersize": 11,
         "capsize": 2.5,
         "elinewidth": 1.0,
         "markeredgewidth": 0.8,
@@ -400,15 +400,18 @@ def plot_one_api_summary(
                 legend_handles.setdefault(algo, True)
 
     ax.set_xticks(x_centers)
-    ax.set_xticklabels([column_labels[c] for c in column_ids])
-    ax.tick_params(axis="x", labelsize=12)
-    ax.tick_params(axis="y", labelsize=11)
-    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=13)
+    ax.set_xticklabels([column_labels[c] for c in column_ids], ha="center")
+    ax.tick_params(axis="x", labelsize=14)
+    ax.tick_params(axis="y", labelsize=14)
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     style_paper_axes(ax, n_col)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    ax.legend(fontsize=10, loc="upper left", bbox_to_anchor=(0.005, 0.995),
-              frameon=True, framealpha=0.85, borderpad=0.35,
-              labelspacing=0.3, handletextpad=0.45, title=None)
+    # Horizontal legend above the axis. Wrap to 2 rows so 6 long algo labels
+    # don't overflow the figure width.
+    legend_ncol = min(n_algo, 3)
+    ax.legend(fontsize=14, loc="lower center", bbox_to_anchor=(0.5, 1.01),
+              ncol=legend_ncol, frameon=False,
+              handletextpad=0.35, columnspacing=1.0)
 
     needs_key = any(
         so is not None and SECTION_ORDER_INDEX.get(so) is not None
@@ -421,9 +424,11 @@ def plot_one_api_summary(
         line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
         fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=10.5, color="#444")
         fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=10.5, color="#444")
-        fig.tight_layout(rect=(0, 0, 1.0, 0.93))
+        # Reserve top for: key text (lines at 0.985, 0.955) + 2-row legend below.
+        fig.tight_layout(rect=(0, 0, 1.0, 0.82))
     else:
-        fig.tight_layout()
+        # Reserve top for the 2-row horizontal legend sitting above the axis.
+        fig.tight_layout(rect=(0, 0, 1.0, 0.88))
 
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
@@ -505,15 +510,18 @@ def plot_one_api(
                 legend_handles.setdefault(algo, True)
 
     ax.set_xticks(x_centers)
-    ax.set_xticklabels([column_labels[c] for c in column_ids])
-    ax.tick_params(axis="x", labelsize=12)
-    ax.tick_params(axis="y", labelsize=11)
-    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=13)
+    ax.set_xticklabels([column_labels[c] for c in column_ids], ha="center")
+    ax.tick_params(axis="x", labelsize=14)
+    ax.tick_params(axis="y", labelsize=14)
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     style_paper_axes(ax, n_col)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    ax.legend(fontsize=10, loc="upper left", bbox_to_anchor=(0.005, 0.995),
-              frameon=True, framealpha=0.85, borderpad=0.35,
-              labelspacing=0.3, handletextpad=0.45, title=None)
+    # Horizontal legend above the axis. Wrap to 2 rows so 6 long algo labels
+    # don't overflow the figure width.
+    legend_ncol = min(n_algo, 3)
+    ax.legend(fontsize=14, loc="lower center", bbox_to_anchor=(0.5, 1.01),
+              ncol=legend_ncol, frameon=False,
+              handletextpad=0.35, columnspacing=1.0)
 
     needs_key = any(
         so is not None and SECTION_ORDER_INDEX.get(so) is not None
@@ -527,9 +535,11 @@ def plot_one_api(
         line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
         fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=10.5, color="#444")
         fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=10.5, color="#444")
-        fig.tight_layout(rect=(0, 0, 1.0, 0.93))
+        # Reserve top for: key text (lines at 0.985, 0.955) + 2-row legend below.
+        fig.tight_layout(rect=(0, 0, 1.0, 0.82))
     else:
-        fig.tight_layout()
+        # Reserve top for the 2-row horizontal legend sitting above the axis.
+        fig.tight_layout(rect=(0, 0, 1.0, 0.88))
 
     fig.savefig(out_path, dpi=150)
     plt.close(fig)

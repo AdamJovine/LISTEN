@@ -16,7 +16,7 @@
 #   - gemini__nar__scenario__by_algo.png      (gemini.csv co-produced)
 #   - groq__nar__scenario__by_algo.png + .csv
 #   - groq__nar__scenario__by_algo_orders.csv (groq.png co-produced)
-#   - headphones__MODE__groq__batch8__norm-avg-rank-both.png
+#   - headphones__MODE__groq__batch32__norm-avg-rank-both.png
 #
 # Usage:
 #   bash scripts/IJCAI_recreate.sh
@@ -45,7 +45,7 @@ MAX_ROUNDS="${MAX_ROUNDS:-10}"
 
 DEFAULT_PROMPT="header_then_task_v1"
 MAIN_BATCH_SIZE="${MAIN_BATCH_SIZE:-32}"
-HEADPHONES_BATCH_SIZE="${HEADPHONES_BATCH_SIZE:-8}"
+HEADPHONES_BATCH_SIZE="${HEADPHONES_BATCH_SIZE:-32}"
 SWEEP_BATCH_SIZES=(2 4 8 16 32)
 DEFAULT_ORDER="${DEFAULT_ORDER:-persona,attributes,priorities}"
 
@@ -388,13 +388,16 @@ echo "════════════════════════�
 echo "[STAGE 2] Generating IJCAI plots into ${PLOT_DIR}"
 echo "═══════════════════════════════════════════════════════════════════"
 
-# Per-scenario × batch sizes (tournament).
+# Per-scenario × batch sizes (tournament). --canonical_mode restricts each
+# scenario to its canonical (with-preference) mode; without it, Section 1 leaks
+# B=32 BASE/SOFT data and produces one-point "sweeps" for those modes.
 echo "─── Per-scenario × batch sizes (tournament) ───"
 "${PYTHON_BIN}" "${REPO_ROOT}/plotting/general_plot.py" \
   --path "${OUTPUT_ROOT}" \
   --output-dir "${PLOT_DIR}" \
-  --x_large algo tournament scenario all mode all api_model all \
+  --x_large algo tournament scenario all api_model all \
   --x_medium batch_size all \
+  --canonical_mode \
   --y nar \
   || echo "[WARN] general_plot.py failed"
 copy_legacy_batch_plot_aliases
@@ -421,7 +424,7 @@ echo "─── Cross-scenario × algo × section_order @ B=${MAIN_BATCH_SIZE} (
   --api-model groq \
   || echo "[WARN] plot_orders_by_algo (by-order, groq) failed"
 
-# Headphones LISTEN-T vs LISTEN-U @ B=8, groq only.
+# Headphones LISTEN-T vs LISTEN-U @ B=32, groq only.
 echo "─── Headphones LISTEN-T vs LISTEN-U @ B=${HEADPHONES_BATCH_SIZE} (groq) ───"
 "${PYTHON_BIN}" "${REPO_ROOT}/plotting/headphones_plot.py" \
   --scenario headphones \

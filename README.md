@@ -131,8 +131,8 @@ files in the same directory.
 | Cross-scenario × algorithm × section order (groq + gemini)          | `plotting/plot_orders_by_algo.py` |  ✓    |       |
 | Cross-scenario × algorithm × section order (groq only)              | `plotting/plot_orders_by_algo.py` |       |   ✓   |
 | BASE vs canonical preference-utterance ablation                     | `plotting/plot_base_study.py`     |  ✓    |       |
-| Headphones LISTEN-T vs LISTEN-U @ B=8 (both APIs)                   | `plotting/headphones_plot.py`     |  ✓    |       |
-| Headphones LISTEN-T vs LISTEN-U @ B=8 (groq only)                   | `plotting/headphones_plot.py`     |       |   ✓   |
+| Headphones LISTEN-T vs LISTEN-U @ B=32 (both APIs)                  | `plotting/headphones_plot.py`     |  ✓    |       |
+| Headphones LISTEN-T vs LISTEN-U @ B=32 (groq only)                  | `plotting/headphones_plot.py`     |       |   ✓   |
 
 `plot_orders_by_algo.py` overlays the human-rerank baselines automatically
 by reading `input/rerank_*/`.
