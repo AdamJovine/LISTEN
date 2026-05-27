@@ -257,7 +257,9 @@ def write_plot(
 
     x_labels = [display_names[col_id] for col_id in column_ids]
     ax.set_xticks(x)
-    ax.set_xticklabels(x_labels, ha="center")
+    # 5 long scenario names at 14pt don't fit horizontally — rotate to avoid
+    # the Flights Ithaca / Flights Chicago labels colliding.
+    ax.set_xticklabels(x_labels, rotation=30, ha="right", rotation_mode="anchor")
     ax.tick_params(axis="x", labelsize=14)
     ax.tick_params(axis="y", labelsize=14)
     ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
@@ -266,13 +268,20 @@ def write_plot(
     ax.set_xlim(-0.5, n_columns - 0.5)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
     # Horizontal legend above the axis so it never blocks data points.
+    # For the typical 4-series layout (LISTEN-T/U × with-preference/no-pref)
+    # use a tidy 2x2 grid instead of a lopsided 3+1 row.
     n_series = len(ax.get_legend_handles_labels()[0])
-    legend_ncol = min(n_series, 3) if n_series > 0 else 1
+    if n_series == 4:
+        legend_ncol = 2
+    elif n_series > 0:
+        legend_ncol = min(n_series, 3)
+    else:
+        legend_ncol = 1
     ax.legend(fontsize=14, loc="lower center", bbox_to_anchor=(0.5, 1.01),
               ncol=legend_ncol, frameon=False,
               handletextpad=0.35, columnspacing=1.0)
-    # Reserve top of the figure for the legend (1 row if <=3 series, 2 rows otherwise).
-    top_rect = 0.92 if n_series <= 3 else 0.88
+    # Reserve top of the figure: 1 row if <=3 series, 2 rows otherwise (incl. 2x2).
+    top_rect = 0.92 if n_series <= 3 else 0.86
     fig.tight_layout(rect=(0, 0, 1.0, top_rect))
     fig.savefig(out_path, dpi=150)
     plt.close(fig)

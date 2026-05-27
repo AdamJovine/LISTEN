@@ -141,7 +141,7 @@ def annotate_section_order(ax: Any, x: float, y: float, err: float, idx: int, co
         xytext=(0, offset_y),
         ha="center",
         va=va,
-        fontsize=13.3,
+        fontsize=9,
         fontweight="bold",
         color=color,
     )
@@ -435,10 +435,11 @@ def plot_one_api_summary(
         half = (len(ordered) + 1) // 2
         line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[:half])
         line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
-        fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=10.5, color="#444")
-        fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=10.5, color="#444")
-        # Reserve top for: key text (lines at 0.985, 0.955) + 2-row legend below.
-        fig.tight_layout(rect=(0, 0, 1.0, 0.82))
+        # Section-order key at the bottom of the figure, below the x-tick row.
+        fig.text(0.5, 0.04, line1, ha="center", va="bottom", fontsize=12, color="#444")
+        fig.text(0.5, 0.01, line2, ha="center", va="bottom", fontsize=12, color="#444")
+        # Reserve top for 2-row legend, bottom for x-ticks + 2-line key.
+        fig.tight_layout(rect=(0, 0.10, 1.0, 0.88))
     else:
         # Reserve top for the 2-row horizontal legend sitting above the axis.
         fig.tight_layout(rect=(0, 0, 1.0, 0.88))
@@ -479,12 +480,20 @@ def plot_one_api(
     n_col = len(column_ids)
     n_algo = len(used_algos)
     x_centers = np.arange(n_col)
-    algo_offsets = np.linspace(-0.4, 0.4, n_algo) if n_algo > 1 else np.array([0.0])
+    # Algos sit between -0.40 and +0.40 so even after sub-jitter the markers
+    # stay strictly inside their scenario column (column boundary at +-0.5).
+    algo_offsets = np.linspace(-0.40, 0.40, n_algo) if n_algo > 1 else np.array([0.0])
 
-    fig, ax = plt.subplots(figsize=(max(10, 2 * n_col + 2), 7.0))
+    # Wider figure than the aggregated plot — each algo has 6 jittered variants.
+    fig, ax = plt.subplots(figsize=(max(13, 2.6 * n_col + 2), 7.0))
 
     legend_handles: Dict[str, Any] = {}
-    sub_jitter_spread = 0.085
+    # sub_jitter_spread must:
+    #   (a) leave a buffer between adjacent algo clusters
+    #       (cluster width 2*s must fit inside the algo gap with margin), and
+    #   (b) not push the outermost variant past the column edge at +-0.5.
+    algo_gap = (0.8 / (n_algo - 1)) if n_algo > 1 else 1.0
+    sub_jitter_spread = min(0.08, 0.35 * algo_gap, 0.5 - 0.40 - 0.02)
 
     for ai, algo in enumerate(used_algos):
         color = ALGO_COLOR[algo]
@@ -500,7 +509,7 @@ def plot_one_api(
                     [x_algo[si]], [mu], yerr=[err],
                     fmt=marker, color=color, linewidth=0,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
-                    **errorbar_style(algo, markersize=7),
+                    **errorbar_style(algo, markersize=8),
                 )
                 legend_handles.setdefault(algo, True)
                 continue
@@ -520,7 +529,7 @@ def plot_one_api(
                     [xi], [mu], yerr=[err],
                     fmt=marker, color=color, linewidth=0,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
-                    **errorbar_style(algo, markersize=7),
+                    **errorbar_style(algo, markersize=8),
                 )
                 idx = SECTION_ORDER_INDEX.get(so) if so is not None else None
                 if idx is not None:
@@ -555,10 +564,11 @@ def plot_one_api(
         half = (len(ordered) + 1) // 2
         line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[:half])
         line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
-        fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=10.5, color="#444")
-        fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=10.5, color="#444")
-        # Reserve top for: key text (lines at 0.985, 0.955) + 2-row legend below.
-        fig.tight_layout(rect=(0, 0, 1.0, 0.82))
+        # Section-order key at the bottom of the figure, below the x-tick row.
+        fig.text(0.5, 0.04, line1, ha="center", va="bottom", fontsize=12, color="#444")
+        fig.text(0.5, 0.01, line2, ha="center", va="bottom", fontsize=12, color="#444")
+        # Reserve top for 2-row legend, bottom for x-ticks + 2-line key.
+        fig.tight_layout(rect=(0, 0.10, 1.0, 0.88))
     else:
         # Reserve top for the 2-row horizontal legend sitting above the axis.
         fig.tight_layout(rect=(0, 0, 1.0, 0.88))
