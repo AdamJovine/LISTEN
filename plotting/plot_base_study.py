@@ -257,7 +257,9 @@ def write_plot(
 
     x_labels = [display_names[col_id] for col_id in column_ids]
     ax.set_xticks(x)
-    ax.set_xticklabels(x_labels, ha="center")
+    # 5 long scenario names at 14pt don't fit horizontally — rotate to avoid
+    # the Flights Ithaca / Flights Chicago labels colliding.
+    ax.set_xticklabels(x_labels, rotation=30, ha="right", rotation_mode="anchor")
     ax.tick_params(axis="x", labelsize=14)
     ax.tick_params(axis="y", labelsize=14)
     ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
