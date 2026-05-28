@@ -219,7 +219,7 @@ def write_plot(
     spread = 0.14
     offsets = np.linspace(-spread * (n_series - 1) / 2, spread * (n_series - 1) / 2, n_series)
 
-    fig, ax = plt.subplots(figsize=(max(10, 2 * n_columns + 2), 7.0))
+    fig, ax = plt.subplots(figsize=(max(9, 1.8 * n_columns + 1), 7.0))
 
     for i in range(n_columns):
         if i % 2 == 0:

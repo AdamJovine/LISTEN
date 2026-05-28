@@ -460,12 +460,13 @@ def plot_one_api(
 
     # full_batch belongs on the aggregated by-algo plot (one marker per algo),
     # but on the per-section-order plot it has no orders and would render as a
-    # lone dot — confusing alongside 6-variant clusters. Drop it here.
-    algos_for_orders = [a for a in ALGO_COLUMNS if a != "full_batch"]
+    # lone dot among the 6-variant clusters — so drop it there only.
+    has_orders = any(so is not None for (_c, _a, so) in data)
+    candidate_algos = [a for a in ALGO_COLUMNS if not (has_orders and a == "full_batch")]
 
     # Which algo columns actually have any data? Drop empty ones.
     used_algos: List[str] = []
-    for a in algos_for_orders:
+    for a in candidate_algos:
         if a == "human_rerank":
             if any(rerank.get(c) for c in column_ids):
                 used_algos.append(a)
@@ -484,8 +485,11 @@ def plot_one_api(
     # stay strictly inside their scenario column (column boundary at +-0.5).
     algo_offsets = np.linspace(-0.40, 0.40, n_algo) if n_algo > 1 else np.array([0.0])
 
-    # Wider figure than the aggregated plot — each algo has 6 jittered variants.
-    fig, ax = plt.subplots(figsize=(max(13, 2.6 * n_col + 2), 7.0))
+    # The by-section-order variant packs 6 jittered markers per algo and needs a
+    # wider canvas; the aggregated variant (one marker per algo) would just look
+    # sparse and shrink the fonts if rendered that wide.
+    fig_w = max(13, 2.6 * n_col + 2) if has_orders else max(10, 2 * n_col + 2)
+    fig, ax = plt.subplots(figsize=(fig_w, 7.0))
 
     legend_handles: Dict[str, Any] = {}
     # sub_jitter_spread must:

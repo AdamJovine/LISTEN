@@ -172,7 +172,7 @@ def headphones_plot(args: argparse.Namespace):
     plt.ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     plt.ylim(0, max(tournament_heights + utility_heights) * 1.25)
     plt.grid(True, axis="y", alpha=0.3)
-    plt.legend(fontsize=19.6)
+    plt.legend(fontsize=14)
 
     # Use args without algo/mode filter for output path; batch_size=32 always (LISTEN-T filter)
     args_no_algo = copy(args)
