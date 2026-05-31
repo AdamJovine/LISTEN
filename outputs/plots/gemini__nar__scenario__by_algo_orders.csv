@@ -1,0 +1,80 @@
+column,algo,section_order,n,mean_nar,two_se
+Flights Ithaca->Reston,tournament,"persona,priorities,attributes",40,0.0103,0.0034
+Flights Ithaca->Reston,tournament,"persona,attributes,priorities",40,0.0111,0.0039
+Flights Ithaca->Reston,tournament,"attributes,persona,priorities",40,0.0186,0.0051
+Flights Ithaca->Reston,tournament,"attributes,priorities,persona",40,0.0162,0.0047
+Flights Ithaca->Reston,tournament,"priorities,persona,attributes",40,0.0075,0.0027
+Flights Ithaca->Reston,tournament,"priorities,attributes,persona",40,0.0404,0.0362
+Flights Ithaca->Reston,utility,"persona,priorities,attributes",40,0.0431,0.0252
+Flights Ithaca->Reston,utility,"persona,attributes,priorities",40,0.0345,0.0033
+Flights Ithaca->Reston,utility,"attributes,persona,priorities",40,0.0347,0.0029
+Flights Ithaca->Reston,utility,"attributes,priorities,persona",40,0.0323,0.0036
+Flights Ithaca->Reston,utility,"priorities,persona,attributes",40,0.0333,0.0034
+Flights Ithaca->Reston,utility,"priorities,attributes,persona",40,0.0344,0.0029
+Flights Ithaca->Reston,full_batch,"persona,attributes,priorities",40,0.1267,0.0647
+Flights Ithaca->Reston,baseline_random,,40,0.5301,0.0000
+Flights Ithaca->Reston,baseline_zscore,,1,0.0370,0.0000
+Flights Ithaca->Reston,human_rerank,,4,0.0058,0.0023
+Flights CHI->NYC,tournament,"persona,priorities,attributes",40,0.4595,0.0480
+Flights CHI->NYC,tournament,"persona,attributes,priorities",40,0.4589,0.0485
+Flights CHI->NYC,tournament,"attributes,persona,priorities",40,0.5094,0.0000
+Flights CHI->NYC,tournament,"attributes,priorities,persona",40,0.4466,0.0533
+Flights CHI->NYC,tournament,"priorities,persona,attributes",40,0.4592,0.0482
+Flights CHI->NYC,tournament,"priorities,attributes,persona",40,0.4716,0.0426
+Flights CHI->NYC,utility,"persona,priorities,attributes",40,0.5094,0.0000
+Flights CHI->NYC,utility,"persona,attributes,priorities",40,0.5094,0.0000
+Flights CHI->NYC,utility,"attributes,persona,priorities",40,0.5094,0.0000
+Flights CHI->NYC,utility,"attributes,priorities,persona",40,0.5094,0.0000
+Flights CHI->NYC,utility,"priorities,persona,attributes",40,0.5094,0.0000
+Flights CHI->NYC,utility,"priorities,attributes,persona",40,0.5094,0.0000
+Flights CHI->NYC,full_batch,"persona,attributes,priorities",40,0.4591,0.0483
+Flights CHI->NYC,baseline_random,,40,0.5094,0.0000
+Flights CHI->NYC,baseline_zscore,,1,0.5094,0.0000
+Flights CHI->NYC,human_rerank,,4,0.5094,0.0000
+Headphones,tournament,"persona,priorities,attributes",40,0.2192,0.0762
+Headphones,tournament,"persona,attributes,priorities",40,0.1433,0.0602
+Headphones,tournament,"attributes,persona,priorities",40,0.1731,0.0631
+Headphones,tournament,"attributes,priorities,persona",40,0.1090,0.0497
+Headphones,tournament,"priorities,persona,attributes",40,0.1971,0.0749
+Headphones,tournament,"priorities,attributes,persona",40,0.2031,0.0701
+Headphones,utility,"persona,priorities,attributes",40,0.6231,0.0000
+Headphones,utility,"persona,attributes,priorities",40,0.6231,0.0000
+Headphones,utility,"attributes,persona,priorities",40,0.6231,0.0000
+Headphones,utility,"attributes,priorities,persona",40,0.6231,0.0000
+Headphones,utility,"priorities,persona,attributes",40,0.6231,0.0000
+Headphones,utility,"priorities,attributes,persona",40,0.6231,0.0000
+Headphones,full_batch,"persona,attributes,priorities",40,0.1788,0.0718
+Headphones,baseline_random,,40,0.5254,0.0632
+Headphones,baseline_zscore,,1,0.6231,0.0000
+Headphones,human_rerank,,4,0.1904,0.2887
+Headphones-SOFT,tournament,"persona,priorities,attributes",40,0.2477,0.0606
+Headphones-SOFT,tournament,"persona,attributes,priorities",40,0.1610,0.0595
+Headphones-SOFT,tournament,"attributes,persona,priorities",40,0.1867,0.0550
+Headphones-SOFT,tournament,"attributes,priorities,persona",40,0.1515,0.0380
+Headphones-SOFT,tournament,"priorities,persona,attributes",40,0.2404,0.0620
+Headphones-SOFT,tournament,"priorities,attributes,persona",40,0.2806,0.0682
+Headphones-SOFT,utility,"persona,priorities,attributes",40,0.1054,0.0553
+Headphones-SOFT,utility,"persona,attributes,priorities",40,0.1479,0.0701
+Headphones-SOFT,utility,"attributes,persona,priorities",40,0.0613,0.0288
+Headphones-SOFT,utility,"attributes,priorities,persona",40,0.1054,0.0553
+Headphones-SOFT,utility,"priorities,persona,attributes",40,0.1335,0.0659
+Headphones-SOFT,utility,"priorities,attributes,persona",40,0.1206,0.0609
+Headphones-SOFT,full_batch,"persona,attributes,priorities",40,0.2373,0.0647
+Headphones-SOFT,baseline_random,,40,0.4446,0.0786
+Headphones-SOFT,baseline_zscore,,1,0.0769,0.0000
+Exam Scheduling,tournament,"persona,priorities,attributes",40,0.4637,0.0422
+Exam Scheduling,tournament,"persona,attributes,priorities",40,0.4762,0.0349
+Exam Scheduling,tournament,"attributes,persona,priorities",40,0.4887,0.0250
+Exam Scheduling,tournament,"attributes,priorities,persona",40,0.4637,0.0422
+Exam Scheduling,tournament,"priorities,persona,attributes",40,0.4762,0.0349
+Exam Scheduling,tournament,"priorities,attributes,persona",40,0.4887,0.0251
+Exam Scheduling,utility,"persona,priorities,attributes",40,0.4638,0.0421
+Exam Scheduling,utility,"persona,attributes,priorities",40,0.4513,0.0480
+Exam Scheduling,utility,"attributes,persona,priorities",40,0.4513,0.0480
+Exam Scheduling,utility,"attributes,priorities,persona",40,0.4388,0.0529
+Exam Scheduling,utility,"priorities,persona,attributes",40,0.4388,0.0529
+Exam Scheduling,utility,"priorities,attributes,persona",40,0.4513,0.0480
+Exam Scheduling,full_batch,"persona,attributes,priorities",40,0.5012,0.0000
+Exam Scheduling,baseline_random,,40,0.5012,0.0000
+Exam Scheduling,baseline_zscore,,1,0.5012,0.0000
+Exam Scheduling,human_rerank,,4,0.3764,0.2497
