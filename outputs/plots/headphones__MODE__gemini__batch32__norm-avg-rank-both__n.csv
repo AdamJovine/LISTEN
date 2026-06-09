@@ -1,0 +1,5 @@
+mode,algo,n,mean,two_se
+MAIN,tournament,40,0.173828,0.145653
+MAIN,utility,40,0.617188,0.000000
+SOFT,tournament,40,0.147852,0.120810
+SOFT,utility,40,0.045898,0.058594

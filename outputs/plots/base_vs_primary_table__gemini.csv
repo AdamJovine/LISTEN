@@ -1,6 +1,6 @@
 column,scenario,primary_mode,LISTEN-T primary NAR,LISTEN-T primary n,LISTEN-T BASE NAR,LISTEN-T BASE n,LISTEN-T primary_better,LISTEN-U primary NAR,LISTEN-U primary n,LISTEN-U BASE NAR,LISTEN-U BASE n,LISTEN-U primary_better
-Flights Ithaca → Reston,flights_ithaca_reston,Complicated,0.010,40,0.146,40,yes,0.043,40,0.009,40,no
-Flights Chicago → NYC,flights_chi_nyc,Complicated_structured,0.459,40,0.447,40,no,0.509,40,0.509,40,no
-Headphones,headphones,MAIN,0.219,40,0.089,40,no,0.623,40,0.623,40,no
-Headphones-SOFT,headphones,SOFT,0.248,40,0.116,40,no,0.105,40,0.623,40,yes
-Exam Scheduling,exam,REGISTRAR,0.464,40,0.501,40,yes,0.464,40,0.276,40,no
+Flights Ithaca → Reston,flights_ithaca_reston,Complicated,0.016,40,0.186,40,yes,0.032,40,0.009,40,no
+Flights Chicago → NYC,flights_chi_nyc,Complicated_structured,0.447,40,0.485,40,yes,0.509,40,0.484,40,no
+Headphones,headphones,MAIN,0.109,40,0.119,40,yes,0.623,40,0.623,40,no
+Headphones-SOFT,headphones,SOFT,0.152,40,0.166,40,yes,0.105,40,0.623,40,yes
+Exam Scheduling,exam,REGISTRAR,0.464,40,0.501,40,yes,0.439,40,0.289,40,no
