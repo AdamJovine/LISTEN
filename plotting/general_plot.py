@@ -46,6 +46,7 @@ from plotting_helpers import (
     get_algo_color,
     get_algo_marker,
     get_metric_display_name,
+    get_metric_axis_label,
     get_field_display_name,
     get_field_value,
     get_reps_cap,
@@ -141,7 +142,8 @@ def plot_aggregated(
     agg_data: Dict[str, Any],
     title: str,
     output_path: Path,
-    show: bool = False
+    show: bool = False,
+    filters: Dict[str, Any] | None = None,
 ) -> None:
     """Plot aggregated data as a dot plot with error bars."""
     x_values = agg_data["x_values"]
@@ -162,16 +164,33 @@ def plot_aggregated(
     n_x = len(x_values)
 
     if n_groups == 1 and "_all" in groups:
-        # Simple dot plot (no legend grouping)
+        # Single-series dot plot. When an algo filter is active, label the
+        # series so the legend names the algorithm (e.g. "LISTEN-T") instead
+        # of leaving it implicit.
+        algo_filter = (filters or {}).get("algo")
+        if algo_filter:
+            series_label = get_algo_display_name(str(algo_filter))
+            series_color = get_algo_color(str(algo_filter))
+            series_marker = get_algo_marker(str(algo_filter))
+        else:
+            series_label = None
+            series_color = "steelblue"
+            series_marker = "D"
+
         group_data = groups["_all"]
         valid = [(i, group_data["means"][i], group_data["stderrs"][i])
                  for i in range(len(x_labels)) if group_data["means"][i] is not None]
         if valid:
             indices, means, errs = zip(*valid)
-            ax.errorbar(indices, means, yerr=errs, fmt='D', markersize=4, capsize=5,
-                       color="steelblue", markeredgecolor="black", markeredgewidth=0.5)
+            ax.errorbar(indices, means, yerr=errs, fmt=series_marker, markersize=11,
+                        capsize=5, label=series_label, color=series_color,
+                        markeredgecolor="black", markeredgewidth=0.5)
         ax.set_xticks(range(len(x_labels)))
         ax.set_xticklabels(x_labels)
+        if series_label:
+            ax.legend(fontsize=14, loc="upper left", bbox_to_anchor=(0.005, 0.995),
+                      frameon=True, framealpha=0.85, borderpad=0.35,
+                      labelspacing=0.3, handletextpad=0.45, title=None)
     else:
         # Grouped dot plot with legend
         offset_step = 0.12
@@ -202,16 +221,20 @@ def plot_aggregated(
             color = get_algo_color(str(group_val)) if group_field == "algo" else None
             marker = get_algo_marker(str(group_val)) if group_field == "algo" else "D"
 
-            ax.errorbar(valid_positions, valid_means, yerr=valid_errs, fmt=marker, markersize=6,
+            ax.errorbar(valid_positions, valid_means, yerr=valid_errs, fmt=marker, markersize=11,
                        capsize=4, label=label, markeredgecolor="black", markeredgewidth=0.5,
                        color=color)
         ax.set_xticks(x_centers)
         ax.set_xticklabels(x_labels)
-        ax.legend(fontsize=19.6, title=get_field_display_name(group_field) if group_field else None, title_fontsize=19.6)
+        ax.legend(fontsize=14, loc="upper left", bbox_to_anchor=(0.005, 0.995),
+                  frameon=True, framealpha=0.85, borderpad=0.35,
+                  labelspacing=0.3, handletextpad=0.45, title=None)
 
+    ax.tick_params(axis="x", labelsize=14)
+    ax.tick_params(axis="y", labelsize=14)
     ax.grid(True, axis='y', linestyle=':', linewidth=0.5, color='gray', alpha=0.5)
-    ax.set_xlabel(get_field_display_name(x_field))
-    ax.set_ylabel(get_metric_display_name(y_metric))
+    ax.set_xlabel(get_field_display_name(x_field), fontsize=14)
+    ax.set_ylabel(get_metric_axis_label(y_metric), fontsize=14)
     plt.tight_layout()
 
     plt.savefig(output_path, dpi=150)
@@ -304,7 +327,7 @@ def generate_plot_with_filters(
     filename = "__".join(filename_parts) + ".png"
     output_path = output_dir / filename
 
-    plot_aggregated(agg_data, title, output_path, show)
+    plot_aggregated(agg_data, title, output_path, show, filters=filters)
 
 
 # =============================================================================

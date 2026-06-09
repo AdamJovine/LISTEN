@@ -16,7 +16,7 @@
 #   - plot_orders_by_algo: <api>__nar__scenario__by_algo.{png,csv} (aggregated)
 #   - plot_orders_by_algo: <api>__nar__scenario__by_algo_orders.{png,csv} (per section_order)
 #   - plot_base_study:     base_study_nar__<api>.png + base_vs_primary_table__<api>.csv
-#   - headphones_plot:     headphones__MODE__<api>__batch8__norm-avg-rank-both.png
+#   - headphones_plot:     headphones__MODE__<api>__batch32__norm-avg-rank-both.png
 #
 # Usage:
 #   bash scripts/arXiv_recreate.sh
@@ -389,11 +389,15 @@ echo "[STAGE 2] Generating plots into ${PLOT_DIR}"
 echo "═══════════════════════════════════════════════════════════════════"
 
 echo "─── [PLOT 1] Per-scenario × batch sizes (tournament) ───"
+# --canonical_mode restricts each scenario to its canonical (with-preference)
+# mode; without it, Section 1 leaks B=32 BASE/SOFT data and produces one-point
+# "sweeps" for those modes.
 "${PYTHON_BIN}" "${REPO_ROOT}/plotting/general_plot.py" \
   --path "${OUTPUT_ROOT}" \
   --output-dir "${PLOT_DIR}" \
-  --x_large algo tournament scenario all mode all api_model all \
+  --x_large algo tournament scenario all api_model all \
   --x_medium batch_size all \
+  --canonical_mode \
   --y nar \
   || echo "[WARN] general_plot.py failed"
 copy_legacy_batch_plot_aliases

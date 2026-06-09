@@ -385,6 +385,14 @@ METRIC_DISPLAY_NAMES = {
     "gtu": "GTU",
 }
 
+# Long-form labels used on y-axes. Titles still use METRIC_DISPLAY_NAMES so
+# headers stay short; only the axis label spells the metric out.
+METRIC_AXIS_LABELS = {
+    "accuracy": "P(chosen = best)",
+    "nar": "Normalized Average Rank (mean +/- 2 SE)",
+    "gtu": "GTU",
+}
+
 FIELD_DISPLAY_NAMES = {
     "batch_size": "Batch Size",
     "api_model": "LLM",
@@ -404,8 +412,13 @@ def get_scenario_display_name(scenario: str) -> str:
 
 
 def get_metric_display_name(metric: str) -> str:
-    """Map metric name to display name for axis labels."""
+    """Map metric name to short display name for plot titles."""
     return METRIC_DISPLAY_NAMES.get(metric.lower(), metric)
+
+
+def get_metric_axis_label(metric: str) -> str:
+    """Map metric name to long-form y-axis label."""
+    return METRIC_AXIS_LABELS.get(metric.lower(), get_metric_display_name(metric))
 
 
 def get_field_display_name(field: str) -> str:

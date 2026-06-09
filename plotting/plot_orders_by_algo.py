@@ -84,10 +84,13 @@ ALGO_MARKER = {
 BASELINE_ALGOS = {"full_batch", "baseline_random", "baseline_zscore", "human_rerank"}
 
 
-def errorbar_style(algo: str) -> Dict[str, Any]:
+def errorbar_style(algo: str, markersize: int = 11) -> Dict[str, Any]:
+    """Errorbar style. Default markersize=11 suits the aggregated plot
+    (one marker per algo per scenario). For the by-section-order variant
+    (6 jittered markers per algo) pass markersize=7 to avoid overlap."""
     zorder = 5 if algo in BASELINE_ALGOS else 3
     return {
-        "markersize": 7,
+        "markersize": markersize,
         "capsize": 2.5,
         "elinewidth": 1.0,
         "markeredgewidth": 0.8,
@@ -138,7 +141,7 @@ def annotate_section_order(ax: Any, x: float, y: float, err: float, idx: int, co
         xytext=(0, offset_y),
         ha="center",
         va=va,
-        fontsize=13.3,
+        fontsize=9,
         fontweight="bold",
         color=color,
     )
@@ -407,15 +410,18 @@ def plot_one_api_summary(
                 legend_handles.setdefault(algo, True)
 
     ax.set_xticks(x_centers)
-    ax.set_xticklabels([column_labels[c] for c in column_ids])
-    ax.tick_params(axis="x", labelsize=14.4)
-    ax.tick_params(axis="y", labelsize=15.4)
-    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=18.2)
+    ax.set_xticklabels([column_labels[c] for c in column_ids], ha="center")
+    ax.tick_params(axis="x", labelsize=14)
+    ax.tick_params(axis="y", labelsize=14)
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     style_paper_axes(ax, n_col)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    ax.legend(fontsize=14, loc="upper left", bbox_to_anchor=(0.005, 0.995),
-              frameon=True, framealpha=0.85, borderpad=0.35,
-              labelspacing=0.3, handletextpad=0.45, title=None)
+    # Horizontal legend above the axis. Wrap to 2 rows so 6 long algo labels
+    # don't overflow the figure width.
+    legend_ncol = min(n_algo, 3)
+    ax.legend(fontsize=14, loc="lower center", bbox_to_anchor=(0.5, 1.01),
+              ncol=legend_ncol, frameon=False,
+              handletextpad=0.35, columnspacing=1.0)
 
     present_orders = sorted(
         {
@@ -425,16 +431,18 @@ def plot_one_api_summary(
         key=lambda t: SECTION_ORDER_INDEX[t],
     )
     if present_orders:
-        items = [(o, SECTION_ORDER_INDEX[o]) for o in present_orders]
-        half = (len(items) + 1) // 2
-        line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in items[:half])
-        line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in items[half:])
-        fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=14.7, color="#444")
-        if line2:
-            fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=14.7, color="#444")
-        fig.tight_layout(rect=(0, 0, 1.0, 0.93))
+        ordered = [(so, SECTION_ORDER_INDEX[so]) for so in present_orders]
+        half = (len(ordered) + 1) // 2
+        line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[:half])
+        line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
+        # Section-order key at the bottom of the figure, below the x-tick row.
+        fig.text(0.5, 0.04, line1, ha="center", va="bottom", fontsize=12, color="#444")
+        fig.text(0.5, 0.01, line2, ha="center", va="bottom", fontsize=12, color="#444")
+        # Reserve top for 2-row legend, bottom for x-ticks + 2-line key.
+        fig.tight_layout(rect=(0, 0.10, 1.0, 0.88))
     else:
-        fig.tight_layout()
+        # Reserve top for the 2-row horizontal legend sitting above the axis.
+        fig.tight_layout(rect=(0, 0, 1.0, 0.88))
 
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
@@ -450,9 +458,15 @@ def plot_one_api(
     column_ids = [c for c, _s, _m, _d in COLUMNS]
     column_labels = {c: d for c, _s, _m, d in COLUMNS}
 
+    # full_batch belongs on the aggregated by-algo plot (one marker per algo),
+    # but on the per-section-order plot it has no orders and would render as a
+    # lone dot among the 6-variant clusters — so drop it there only.
+    has_orders = any(so is not None for (_c, _a, so) in data)
+    candidate_algos = [a for a in ALGO_COLUMNS if not (has_orders and a == "full_batch")]
+
     # Which algo columns actually have any data? Drop empty ones.
     used_algos: List[str] = []
-    for a in ALGO_COLUMNS:
+    for a in candidate_algos:
         if a == "human_rerank":
             if any(rerank.get(c) for c in column_ids):
                 used_algos.append(a)
@@ -467,12 +481,23 @@ def plot_one_api(
     n_col = len(column_ids)
     n_algo = len(used_algos)
     x_centers = np.arange(n_col)
-    algo_offsets = np.linspace(-0.4, 0.4, n_algo) if n_algo > 1 else np.array([0.0])
+    # Algos sit between -0.40 and +0.40 so even after sub-jitter the markers
+    # stay strictly inside their scenario column (column boundary at +-0.5).
+    algo_offsets = np.linspace(-0.40, 0.40, n_algo) if n_algo > 1 else np.array([0.0])
 
-    fig, ax = plt.subplots(figsize=(max(10, 2 * n_col + 2), 7.0))
+    # The by-section-order variant packs 6 jittered markers per algo and needs a
+    # wider canvas; the aggregated variant (one marker per algo) would just look
+    # sparse and shrink the fonts if rendered that wide.
+    fig_w = max(13, 2.6 * n_col + 2) if has_orders else max(10, 2 * n_col + 2)
+    fig, ax = plt.subplots(figsize=(fig_w, 7.0))
 
     legend_handles: Dict[str, Any] = {}
-    sub_jitter_spread = 0.085
+    # sub_jitter_spread must:
+    #   (a) leave a buffer between adjacent algo clusters
+    #       (cluster width 2*s must fit inside the algo gap with margin), and
+    #   (b) not push the outermost variant past the column edge at +-0.5.
+    algo_gap = (0.8 / (n_algo - 1)) if n_algo > 1 else 1.0
+    sub_jitter_spread = min(0.08, 0.35 * algo_gap, 0.5 - 0.40 - 0.02)
 
     for ai, algo in enumerate(used_algos):
         color = ALGO_COLOR[algo]
@@ -488,7 +513,7 @@ def plot_one_api(
                     [x_algo[si]], [mu], yerr=[err],
                     fmt=marker, color=color, linewidth=0,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
-                    **errorbar_style(algo),
+                    **errorbar_style(algo, markersize=8),
                 )
                 legend_handles.setdefault(algo, True)
                 continue
@@ -508,7 +533,7 @@ def plot_one_api(
                     [xi], [mu], yerr=[err],
                     fmt=marker, color=color, linewidth=0,
                     label=ALGO_DISPLAY[algo] if algo not in legend_handles else None,
-                    **errorbar_style(algo),
+                    **errorbar_style(algo, markersize=8),
                 )
                 idx = SECTION_ORDER_INDEX.get(so) if so is not None else None
                 if idx is not None:
@@ -516,15 +541,18 @@ def plot_one_api(
                 legend_handles.setdefault(algo, True)
 
     ax.set_xticks(x_centers)
-    ax.set_xticklabels([column_labels[c] for c in column_ids])
-    ax.tick_params(axis="x", labelsize=14.4)
-    ax.tick_params(axis="y", labelsize=15.4)
-    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=18.2)
+    ax.set_xticklabels([column_labels[c] for c in column_ids], ha="center")
+    ax.tick_params(axis="x", labelsize=14)
+    ax.tick_params(axis="y", labelsize=14)
+    ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     style_paper_axes(ax, n_col)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    ax.legend(fontsize=14, loc="upper left", bbox_to_anchor=(0.005, 0.995),
-              frameon=True, framealpha=0.85, borderpad=0.35,
-              labelspacing=0.3, handletextpad=0.45, title=None)
+    # Horizontal legend above the axis. Wrap to 2 rows so 6 long algo labels
+    # don't overflow the figure width.
+    legend_ncol = min(n_algo, 3)
+    ax.legend(fontsize=14, loc="lower center", bbox_to_anchor=(0.5, 1.01),
+              ncol=legend_ncol, frameon=False,
+              handletextpad=0.35, columnspacing=1.0)
 
     present_orders = sorted(
         {
@@ -536,16 +564,18 @@ def plot_one_api(
         key=lambda t: SECTION_ORDER_INDEX[t],
     )
     if present_orders:
-        items = [(o, SECTION_ORDER_INDEX[o]) for o in present_orders]
-        half = (len(items) + 1) // 2
-        line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in items[:half])
-        line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in items[half:])
-        fig.text(0.5, 0.985, line1, ha="center", va="top", fontsize=14.7, color="#444")
-        if line2:
-            fig.text(0.5, 0.955, line2, ha="center", va="top", fontsize=14.7, color="#444")
-        fig.tight_layout(rect=(0, 0, 1.0, 0.93))
+        ordered = [(so, SECTION_ORDER_INDEX[so]) for so in present_orders]
+        half = (len(ordered) + 1) // 2
+        line1 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[:half])
+        line2 = "    ".join(f"{idx}: {','.join(order)}" for order, idx in ordered[half:])
+        # Section-order key at the bottom of the figure, below the x-tick row.
+        fig.text(0.5, 0.04, line1, ha="center", va="bottom", fontsize=12, color="#444")
+        fig.text(0.5, 0.01, line2, ha="center", va="bottom", fontsize=12, color="#444")
+        # Reserve top for 2-row legend, bottom for x-ticks + 2-line key.
+        fig.tight_layout(rect=(0, 0.10, 1.0, 0.88))
     else:
-        fig.tight_layout()
+        # Reserve top for the 2-row horizontal legend sitting above the axis.
+        fig.tight_layout(rect=(0, 0, 1.0, 0.88))
 
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
