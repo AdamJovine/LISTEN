@@ -234,7 +234,7 @@ def plot_aggregated(
     ax.tick_params(axis="y", labelsize=14)
     ax.grid(True, axis='y', linestyle=':', linewidth=0.5, color='gray', alpha=0.5)
     ax.set_xlabel(get_field_display_name(x_field), fontsize=16)
-    ax.set_ylabel(get_metric_axis_label(y_metric), fontsize=14)
+    ax.set_ylabel(get_metric_axis_label(y_metric), fontsize=16)
     plt.tight_layout()
 
     plt.savefig(output_path, dpi=150)

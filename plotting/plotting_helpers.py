@@ -389,7 +389,7 @@ METRIC_DISPLAY_NAMES = {
 # headers stay short; only the axis label spells the metric out.
 METRIC_AXIS_LABELS = {
     "accuracy": "P(chosen = best)",
-    "nar": "Normalized Average Rank (mean +/- 2 SE)",
+    "nar": "Normalized Average Rank\n(mean +/- 2 SE)",
     "gtu": "GTU",
 }
 
