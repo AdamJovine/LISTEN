@@ -36,7 +36,7 @@ from plotting_helpers import (  # noqa: E402
 # has more than one preference-utterance mode worth plotting separately.
 COLUMNS: List[Tuple[str, str, str, str]] = [
     # (column_id, scenario, primary_mode, display_name)
-    ("flights_ithaca_reston", "flights_ithaca_reston", "Complicated",            "Flights Ithaca->Reston"),
+    ("flights_ithaca_reston", "flights_ithaca_reston", "Complicated",            "Flights Ithaca\n→ Reston"),
     ("flights_chi_nyc",       "flights_chi_nyc",       "Complicated_structured", "Flights CHI->NYC"),
     ("headphones__MAIN",      "headphones",            "MAIN",                   "Headphones"),
     ("headphones__SOFT",      "headphones",            "SOFT",                   "Headphones-SOFT"),
@@ -411,7 +411,7 @@ def plot_one_api_summary(
 
     ax.set_xticks(x_centers)
     ax.set_xticklabels([column_labels[c] for c in column_ids], ha="center")
-    ax.tick_params(axis="x", labelsize=14)
+    ax.tick_params(axis="x", labelsize=16)
     ax.tick_params(axis="y", labelsize=14)
     ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     style_paper_axes(ax, n_col)
@@ -542,7 +542,7 @@ def plot_one_api(
 
     ax.set_xticks(x_centers)
     ax.set_xticklabels([column_labels[c] for c in column_ids], ha="center")
-    ax.tick_params(axis="x", labelsize=14)
+    ax.tick_params(axis="x", labelsize=16)
     ax.tick_params(axis="y", labelsize=14)
     ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     style_paper_axes(ax, n_col)
