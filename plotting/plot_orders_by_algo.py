@@ -416,12 +416,10 @@ def plot_one_api_summary(
     ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     style_paper_axes(ax, n_col)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    # Horizontal legend above the axis. Wrap to 2 rows so 6 long algo labels
-    # don't overflow the figure width.
-    legend_ncol = min(n_algo, 3)
-    ax.legend(fontsize=14, loc="lower center", bbox_to_anchor=(0.5, 1.01),
-              ncol=legend_ncol, frameon=False,
-              handletextpad=0.35, columnspacing=1.0)
+    # Full-width 2-row legend above the axis.
+    ax.legend(fontsize=16, loc="lower left", bbox_to_anchor=(0, 1.01, 1, 0.1),
+              ncol=math.ceil(n_algo / 2), frameon=False, mode="expand",
+              handletextpad=0.4, columnspacing=1.2)
 
     present_orders = sorted(
         {
@@ -547,12 +545,10 @@ def plot_one_api(
     ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     style_paper_axes(ax, n_col)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, color="gray", alpha=0.5)
-    # Horizontal legend above the axis. Wrap to 2 rows so 6 long algo labels
-    # don't overflow the figure width.
-    legend_ncol = min(n_algo, 3)
-    ax.legend(fontsize=14, loc="lower center", bbox_to_anchor=(0.5, 1.01),
-              ncol=legend_ncol, frameon=False,
-              handletextpad=0.35, columnspacing=1.0)
+    # Full-width 2-row legend above the axis.
+    ax.legend(fontsize=16, loc="lower left", bbox_to_anchor=(0, 1.01, 1, 0.1),
+              ncol=math.ceil(n_algo / 2), frameon=False, mode="expand",
+              handletextpad=0.4, columnspacing=1.2)
 
     present_orders = sorted(
         {
