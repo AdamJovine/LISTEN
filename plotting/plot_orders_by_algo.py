@@ -141,7 +141,7 @@ def annotate_section_order(ax: Any, x: float, y: float, err: float, idx: int, co
         xytext=(0, offset_y),
         ha="center",
         va=va,
-        fontsize=9,
+        fontsize=12,
         fontweight="bold",
         color=color,
     )
