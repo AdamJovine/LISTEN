@@ -188,7 +188,7 @@ def plot_aggregated(
         ax.set_xticks(range(len(x_labels)))
         ax.set_xticklabels(x_labels)
         if series_label:
-            ax.legend(fontsize=14, loc="upper left", bbox_to_anchor=(0.005, 0.995),
+            ax.legend(fontsize=16, loc="upper left", bbox_to_anchor=(0.005, 0.995),
                       frameon=True, framealpha=0.85, borderpad=0.35,
                       labelspacing=0.3, handletextpad=0.45, title=None)
     else:
@@ -226,14 +226,14 @@ def plot_aggregated(
                        color=color)
         ax.set_xticks(x_centers)
         ax.set_xticklabels(x_labels)
-        ax.legend(fontsize=14, loc="upper left", bbox_to_anchor=(0.005, 0.995),
+        ax.legend(fontsize=16, loc="upper left", bbox_to_anchor=(0.005, 0.995),
                   frameon=True, framealpha=0.85, borderpad=0.35,
                   labelspacing=0.3, handletextpad=0.45, title=None)
 
-    ax.tick_params(axis="x", labelsize=14)
+    ax.tick_params(axis="x", labelsize=16)
     ax.tick_params(axis="y", labelsize=14)
     ax.grid(True, axis='y', linestyle=':', linewidth=0.5, color='gray', alpha=0.5)
-    ax.set_xlabel(get_field_display_name(x_field), fontsize=14)
+    ax.set_xlabel(get_field_display_name(x_field), fontsize=16)
     ax.set_ylabel(get_metric_axis_label(y_metric), fontsize=14)
     plt.tight_layout()
 
