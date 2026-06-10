@@ -167,18 +167,18 @@ def headphones_plot(args: argparse.Namespace):
         "MAIN": "Headphones",
         "SOFT": "Headphones-Soft",
     }
-    plt.xticks(x, [mode_display.get(mode, f"{args.scenario.title()}-{mode.replace('_', ' ').title()}") for mode in modes], fontsize=14)
+    plt.xticks(x, [mode_display.get(mode, f"{args.scenario.title()}-{mode.replace('_', ' ').title()}") for mode in modes], fontsize=16)
     plt.yticks(fontsize=14)
     plt.ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     plt.ylim(0, max(tournament_heights + utility_heights) * 1.25)
     plt.grid(True, axis="y", alpha=0.3)
-    plt.legend(fontsize=14)
+    plt.legend(fontsize=16)
 
     # Use args without algo/mode filter for output path; batch_size=32 always (LISTEN-T filter)
     args_no_algo = copy(args)
     args_no_algo.algo = None
     args_no_algo.mode = None if len(modes) > 1 else modes[0]
-    args_no_algo.batch_size = 32
+    args_no_algo.batch_size = args.batch_size or 32
     if getattr(args, "plot_dir", None):
         args_no_algo.output_dir = args.plot_dir
     out_path = build_output_path(args_no_algo, "norm-avg-rank-both")
