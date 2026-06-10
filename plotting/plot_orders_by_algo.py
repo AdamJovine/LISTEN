@@ -411,7 +411,7 @@ def plot_one_api_summary(
 
     ax.set_xticks(x_centers)
     ax.set_xticklabels([column_labels[c] for c in column_ids], ha="center")
-    ax.tick_params(axis="x", labelsize=16)
+    ax.tick_params(axis="x", labelsize=18)
     ax.tick_params(axis="y", labelsize=14)
     ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     style_paper_axes(ax, n_col)
@@ -540,7 +540,7 @@ def plot_one_api(
 
     ax.set_xticks(x_centers)
     ax.set_xticklabels([column_labels[c] for c in column_ids], ha="center")
-    ax.tick_params(axis="x", labelsize=16)
+    ax.tick_params(axis="x", labelsize=18)
     ax.tick_params(axis="y", labelsize=14)
     ax.set_ylabel("Normalized Average Rank (mean +/- 2 SE)", fontsize=14)
     style_paper_axes(ax, n_col)
